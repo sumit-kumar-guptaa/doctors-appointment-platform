@@ -56,7 +56,7 @@ export default function Home() {
                 alt="Doctor consultation"
                 fill
                 priority
-                className="object-cover md:pt-10 rounded-xl"
+                className="object-cover md:pt-14 rounded-xl"
               />
             </div>
           </div>
