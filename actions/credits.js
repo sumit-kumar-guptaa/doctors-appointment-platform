@@ -106,7 +106,6 @@ export async function checkAndAllocateCredits(user) {
     });
 
     // Revalidate relevant paths to reflect updated credit balance
-    revalidatePath("/");
     revalidatePath("/doctors");
     revalidatePath("/appointments");
 
@@ -165,36 +164,5 @@ export async function deductCreditsForAppointment(userId) {
   } catch (error) {
     console.error("Failed to deduct credits:", error);
     return { success: false, error: error.message };
-  }
-}
-
-/**
- * Gets user's transaction history
- */
-export async function getUserTransactions() {
-  const { userId } = await auth();
-  if (!userId) throw new Error("Unauthorized");
-
-  try {
-    const user = await db.user.findUnique({
-      where: { clerkUserId: userId },
-    });
-
-    if (!user) {
-      return { error: "User not found" };
-    }
-
-    const transactions = await db.creditTransaction.findMany({
-      where: {
-        userId: user.id,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    return { transactions, credits: user.credits };
-  } catch (error) {
-    throw new Error("Failed to fetch transaction history " + error.message);
   }
 }
