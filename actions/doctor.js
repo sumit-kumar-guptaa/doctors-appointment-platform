@@ -316,3 +316,68 @@ export async function addAppointmentNotes(formData) {
     throw new Error("Failed to update notes: " + error.message);
   }
 }
+
+/**
+ * Get doctor's earnings summary
+ */
+export async function getDoctorEarnings() {
+  const { userId } = await auth();
+
+  if (!userId) {
+    throw new Error("Unauthorized");
+  }
+
+  try {
+    const doctor = await db.user.findUnique({
+      where: {
+        clerkUserId: userId,
+        role: "DOCTOR",
+      },
+    });
+
+    if (!doctor) {
+      throw new Error("Doctor not found");
+    }
+
+    // Get all completed appointments for this doctor
+    const completedAppointments = await db.appointment.findMany({
+      where: {
+        doctorId: doctor.id,
+        status: "COMPLETED",
+      },
+    });
+
+    // Calculate earnings (assuming $50 per appointment, adjust as needed)
+    const EARNINGS_PER_APPOINTMENT = 50;
+    const totalEarnings =
+      completedAppointments.length * EARNINGS_PER_APPOINTMENT;
+
+    // Calculate this month's earnings
+    const currentMonth = new Date();
+    currentMonth.setDate(1);
+    currentMonth.setHours(0, 0, 0, 0);
+
+    const thisMonthAppointments = completedAppointments.filter(
+      (appointment) => new Date(appointment.createdAt) >= currentMonth
+    );
+    const thisMonthEarnings =
+      thisMonthAppointments.length * EARNINGS_PER_APPOINTMENT;
+
+    // Simple average per month calculation
+    const averageEarningsPerMonth =
+      totalEarnings > 0
+        ? totalEarnings / Math.max(1, new Date().getMonth() + 1)
+        : 0;
+
+    return {
+      earnings: {
+        totalEarnings,
+        thisMonthEarnings,
+        completedAppointments: completedAppointments.length,
+        averageEarningsPerMonth,
+      },
+    };
+  } catch (error) {
+    throw new Error("Failed to fetch doctor earnings: " + error.message);
+  }
+}
