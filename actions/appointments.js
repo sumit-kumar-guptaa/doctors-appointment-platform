@@ -12,7 +12,7 @@ import fs from "fs";
 // Initialize Vonage Video API client
 const credentials = new Auth({
   applicationId: process.env.NEXT_PUBLIC_VONAGE_APPLICATION_ID,
-  privateKey: fs.readFileSync(process.env.VONAGE_PRIVATE_KEY_PATH, "utf8"),
+  privateKey: process.env.VONAGE_PRIVATE_KEY,
 });
 const options = {};
 const vonage = new Vonage(credentials, options);
