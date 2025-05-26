@@ -11,7 +11,7 @@ import fs from "fs";
 
 // Initialize Vonage Video API client
 const credentials = new Auth({
-  applicationId: process.env.VONAGE_APPLICATION_ID,
+  applicationId: process.env.NEXT_PUBLIC_VONAGE_APPLICATION_ID,
   privateKey: fs.readFileSync(process.env.VONAGE_PRIVATE_KEY_PATH, "utf8"),
 });
 const options = {};
@@ -234,8 +234,8 @@ export async function generateVideoToken(formData) {
     // Generate the token with appropriate role and expiration
     const token = vonage.video.generateClientToken(appointment.videoSessionId, {
       role: "publisher", // Both doctor and patient can publish streams
-      expireTime: expirationTime,
-      data: connectionData,
+      // expireTime: expirationTime,
+      // data: connectionData,
     });
 
     // Update the appointment with the token
