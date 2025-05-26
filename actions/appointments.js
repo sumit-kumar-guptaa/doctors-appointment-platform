@@ -7,7 +7,6 @@ import { deductCreditsForAppointment } from "@/actions/credits";
 import { Vonage } from "@vonage/server-sdk";
 import { addDays, addMinutes, format, isBefore, endOfDay } from "date-fns";
 import { Auth } from "@vonage/auth";
-import fs from "fs";
 
 // Initialize Vonage Video API client
 const credentials = new Auth({
@@ -234,8 +233,8 @@ export async function generateVideoToken(formData) {
     // Generate the token with appropriate role and expiration
     const token = vonage.video.generateClientToken(appointment.videoSessionId, {
       role: "publisher", // Both doctor and patient can publish streams
-      // expireTime: expirationTime,
-      // data: connectionData,
+      expireTime: expirationTime,
+      data: connectionData,
     });
 
     // Update the appointment with the token

@@ -79,38 +79,50 @@ export default function VideoCall({ sessionId, token }) {
       sessionRef.current.on("sessionConnected", () => {
         setIsConnected(true);
         setIsLoading(false);
+
+        // THIS IS THE FIX - Initialize publisher AFTER session connects
+        publisherRef.current = window.OT.initPublisher(
+          "publisher", // This targets the div with id="publisher"
+          {
+            insertMode: "replace", // Change from "append" to "replace"
+            width: "100%",
+            height: "100%",
+            publishAudio: isAudioEnabled,
+            publishVideo: isVideoEnabled,
+          },
+          (error) => {
+            if (error) {
+              console.error("Publisher error:", error);
+              toast.error("Error initializing your camera and microphone");
+            } else {
+              console.log(
+                "Publisher initialized successfully - you should see your video now"
+              );
+            }
+          }
+        );
       });
 
       sessionRef.current.on("sessionDisconnected", () => {
         setIsConnected(false);
       });
 
-      // Initialize the publisher
-      publisherRef.current = window.OT.initPublisher(
-        "publisher",
-        {
-          insertMode: "append",
-          width: "100%",
-          height: "100%",
-        },
-        (error) => {
-          if (error) {
-            toast.error("Error initializing your camera and microphone");
-          }
-        }
-      );
-
       // Connect to the session
       sessionRef.current.connect(token, (error) => {
         if (error) {
           toast.error("Error connecting to video session");
         } else {
-          sessionRef.current.publish(publisherRef.current, (error) => {
-            console.log(error, "Error publishing stream");
-            if (error) {
-              toast.error("Error publishing your stream");
-            }
-          });
+          // Publish your stream AFTER connecting
+          if (publisherRef.current) {
+            sessionRef.current.publish(publisherRef.current, (error) => {
+              if (error) {
+                console.log("Error publishing stream:", error);
+                toast.error("Error publishing your stream");
+              } else {
+                console.log("Stream published successfully");
+              }
+            });
+          }
         }
       });
     } catch (error) {
@@ -137,20 +149,29 @@ export default function VideoCall({ sessionId, token }) {
 
   // End call
   const endCall = () => {
+    // Properly destroy publisher
+    if (publisherRef.current) {
+      publisherRef.current.destroy();
+      publisherRef.current = null;
+    }
+
+    // Disconnect session
     if (sessionRef.current) {
       sessionRef.current.disconnect();
+      sessionRef.current = null;
     }
+
     router.push("/appointments");
   };
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (sessionRef.current) {
-        sessionRef.current.disconnect();
-      }
       if (publisherRef.current) {
         publisherRef.current.destroy();
+      }
+      if (sessionRef.current) {
+        sessionRef.current.disconnect();
       }
     };
   }, []);
@@ -210,40 +231,42 @@ export default function VideoCall({ sessionId, token }) {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Publisher (Your video) */}
-              <Card className="border-emerald-900/20 overflow-hidden">
-                <CardContent className="p-0 relative">
-                  <div
-                    id="publisher"
-                    className="w-full h-[300px] md:h-[400px] bg-muted/30"
-                  >
-                    {!scriptLoaded && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
-                        <div className="bg-muted/20 rounded-full p-8 mb-4">
-                          <User className="h-12 w-12 text-emerald-400" />
-                        </div>
+              <div className="border border-emerald-900/20 rounded-lg overflow-hidden">
+                <div className="bg-emerald-900/10 px-3 py-2 text-emerald-400 text-sm font-medium">
+                  You
+                </div>
+                <div
+                  id="publisher"
+                  className="w-full h-[300px] md:h-[400px] bg-muted/30"
+                >
+                  {!scriptLoaded && (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="bg-muted/20 rounded-full p-8">
+                        <User className="h-12 w-12 text-emerald-400" />
                       </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                    </div>
+                  )}
+                </div>
+              </div>
 
               {/* Subscriber (Other person's video) */}
-              <Card className="border-emerald-900/20 overflow-hidden">
-                <CardContent className="p-0 relative">
-                  <div
-                    id="subscriber"
-                    className="w-full h-[300px] md:h-[400px] bg-muted/30"
-                  >
-                    {(!isConnected || !scriptLoaded) && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
-                        <div className="bg-muted/20 rounded-full p-8 mb-4">
-                          <User className="h-12 w-12 text-emerald-400" />
-                        </div>
+              <div className="border border-emerald-900/20 rounded-lg overflow-hidden">
+                <div className="bg-emerald-900/10 px-3 py-2 text-emerald-400 text-sm font-medium">
+                  Other Participant
+                </div>
+                <div
+                  id="subscriber"
+                  className="w-full h-[300px] md:h-[400px] bg-muted/30"
+                >
+                  {(!isConnected || !scriptLoaded) && (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="bg-muted/20 rounded-full p-8">
+                        <User className="h-12 w-12 text-emerald-400" />
                       </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Video controls */}
@@ -257,7 +280,7 @@ export default function VideoCall({ sessionId, token }) {
                     ? "border-emerald-900/30"
                     : "bg-red-900/20 border-red-900/30 text-red-400"
                 }`}
-                disabled={!isConnected || isLoading}
+                disabled={!publisherRef.current}
               >
                 {isVideoEnabled ? <Video /> : <VideoOff />}
               </Button>
@@ -271,7 +294,7 @@ export default function VideoCall({ sessionId, token }) {
                     ? "border-emerald-900/30"
                     : "bg-red-900/20 border-red-900/30 text-red-400"
                 }`}
-                disabled={!isConnected || isLoading}
+                disabled={!publisherRef.current}
               >
                 {isAudioEnabled ? <Mic /> : <MicOff />}
               </Button>
@@ -288,6 +311,10 @@ export default function VideoCall({ sessionId, token }) {
 
             <div className="text-center">
               <p className="text-muted-foreground text-sm">
+                {isVideoEnabled ? "Camera on" : "Camera off"} •
+                {isAudioEnabled ? " Microphone on" : " Microphone off"}
+              </p>
+              <p className="text-muted-foreground text-sm mt-1">
                 When you're finished with your consultation, click the red
                 button to end the call
               </p>
