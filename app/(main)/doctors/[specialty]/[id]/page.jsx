@@ -1,14 +1,15 @@
-// /app/doctors/[id]/page.jsx
 import { getDoctorById, getAvailableTimeSlots } from "@/actions/appointments";
 import { DoctorProfile } from "./_components/doctor-profile";
 import { redirect } from "next/navigation";
 
 export default async function DoctorProfilePage({ params }) {
+  const { id } = await params;
+
   try {
     // Fetch doctor data and available slots in parallel
     const [doctorData, slotsData] = await Promise.all([
-      getDoctorById(params.id),
-      getAvailableTimeSlots(params.id),
+      getDoctorById(id),
+      getAvailableTimeSlots(id),
     ]);
 
     return (

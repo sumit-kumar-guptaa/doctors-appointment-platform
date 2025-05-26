@@ -1,9 +1,6 @@
 import { redirect } from "next/navigation";
 import { getDoctorsBySpecialty } from "@/actions/doctors-listing";
 import { DoctorCard } from "../components/doctor-card";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 
 export default async function DoctorSpecialtyPage({ params }) {
