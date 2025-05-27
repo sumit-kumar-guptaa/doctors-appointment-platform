@@ -1,25 +1,23 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import {
-  getDoctorAppointments,
-  getDoctorAvailability,
-  getDoctorEarnings,
-} from "@/actions/doctor";
+import { getDoctorAppointments, getDoctorAvailability } from "@/actions/doctor";
 import { AvailabilitySettings } from "./_components/appointment-settings";
-import { DoctorEarnings } from "./_components/doctor-earnings";
 import { getCurrentUser } from "@/actions/onboarding";
 import { redirect } from "next/navigation";
 import { Calendar, Clock, DollarSign } from "lucide-react";
 import DoctorAppointmentsList from "./_components/appointments-list";
+import { getDoctorEarnings, getDoctorPayouts } from "@/actions/payout";
+import { DoctorEarnings } from "./_components/doctor-earnings";
 
 export default async function DoctorDashboardPage() {
   const user = await getCurrentUser();
 
-  // Fetch all data in parallel
-  const [appointmentsData, availabilityData, earningsData] = await Promise.all([
-    getDoctorAppointments(),
-    getDoctorAvailability(),
-    getDoctorEarnings(),
-  ]);
+  const [appointmentsData, availabilityData, earningsData, payoutsData] =
+    await Promise.all([
+      getDoctorAppointments(),
+      getDoctorAvailability(),
+      getDoctorEarnings(),
+      getDoctorPayouts(),
+    ]);
 
   //   // Redirect if not a doctor
   if (user?.role !== "DOCTOR") {
@@ -69,7 +67,10 @@ export default async function DoctorDashboardPage() {
           <AvailabilitySettings slots={availabilityData.slots || []} />
         </TabsContent>
         <TabsContent value="earnings" className="border-none p-0">
-          <DoctorEarnings earnings={earningsData.earnings || {}} />
+          <DoctorEarnings
+            earnings={earningsData.earnings || {}}
+            payouts={payoutsData.payouts || []}
+          />
         </TabsContent>
       </div>
     </Tabs>

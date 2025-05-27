@@ -101,18 +101,22 @@ export default async function Header() {
             )}
           </SignedIn>
 
-          {(!user || user?.role === "PATIENT") && (
-            <Link href="/pricing">
+          {(!user || user?.role !== "ADMIN") && (
+            <Link href={user?.role === "PATIENT" ? "/pricing" : "/doctor"}>
               <Badge
                 variant="outline"
                 className="h-9 bg-emerald-900/20 border-emerald-700/30 px-3 py-1 flex items-center gap-2"
               >
                 <CreditCard className="h-3.5 w-3.5 text-emerald-400" />
                 <span className="text-emerald-400">
-                  {user && user?.role === "PATIENT" ? (
+                  {user && user.role !== "ADMIN" ? (
                     <>
                       {user.credits}{" "}
-                      <span className="hidden md:inline">Credits</span>
+                      <span className="hidden md:inline">
+                        {user?.role === "PATIENT"
+                          ? "Credits"
+                          : "Earned Credits"}
+                      </span>
                     </>
                   ) : (
                     <>Pricing</>
