@@ -1,4 +1,3 @@
-// /components/appointment-card.jsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -15,6 +14,7 @@ import {
   X,
   Edit,
   Loader2,
+  CheckCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -25,8 +25,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { cancelAppointment } from "@/actions/doctor";
-import { addAppointmentNotes } from "@/actions/doctor";
+import {
+  cancelAppointment,
+  addAppointmentNotes,
+  markAppointmentCompleted,
+} from "@/actions/doctor";
 import { generateVideoToken } from "@/actions/appointments";
 import useFetch from "@/hooks/use-fetch";
 import { toast } from "sonner";
@@ -38,7 +41,7 @@ export function AppointmentCard({
   refetchAppointments,
 }) {
   const [open, setOpen] = useState(false);
-  const [action, setAction] = useState(null); // 'cancel', 'notes', or 'video'
+  const [action, setAction] = useState(null); // 'cancel', 'notes', 'video', or 'complete'
   const [notes, setNotes] = useState(appointment.notes || "");
   const router = useRouter();
 
@@ -58,6 +61,11 @@ export function AppointmentCard({
     fn: submitTokenRequest,
     data: tokenData,
   } = useFetch(generateVideoToken);
+  const {
+    loading: completeLoading,
+    fn: submitMarkCompleted,
+    data: completeData,
+  } = useFetch(markAppointmentCompleted);
 
   // Format date and time
   const formatDateTime = (dateString) => {
@@ -77,6 +85,16 @@ export function AppointmentCard({
     }
   };
 
+  // Check if appointment can be marked as completed
+  const canMarkCompleted = () => {
+    if (userRole !== "DOCTOR" || appointment.status !== "SCHEDULED") {
+      return false;
+    }
+    const now = new Date();
+    const appointmentEndTime = new Date(appointment.endTime);
+    return now >= appointmentEndTime;
+  };
+
   // Handle cancel appointment
   const handleCancelAppointment = async () => {
     if (cancelLoading) return;
@@ -89,6 +107,32 @@ export function AppointmentCard({
       const formData = new FormData();
       formData.append("appointmentId", appointment.id);
       await submitCancel(formData);
+    }
+  };
+
+  // Handle mark as completed
+  const handleMarkCompleted = async () => {
+    if (completeLoading) return;
+
+    // Check if appointment end time has passed
+    const now = new Date();
+    const appointmentEndTime = new Date(appointment.endTime);
+
+    if (now < appointmentEndTime) {
+      alert(
+        "Cannot mark appointment as completed before the scheduled end time."
+      );
+      return;
+    }
+
+    if (
+      window.confirm(
+        "Are you sure you want to mark this appointment as completed? This action cannot be undone."
+      )
+    ) {
+      const formData = new FormData();
+      formData.append("appointmentId", appointment.id);
+      await submitMarkCompleted(formData);
     }
   };
 
@@ -125,6 +169,18 @@ export function AppointmentCard({
       }
     }
   }, [cancelData, refetchAppointments, router]);
+
+  useEffect(() => {
+    if (completeData?.success) {
+      toast.success("Appointment marked as completed");
+      setOpen(false);
+      if (refetchAppointments) {
+        refetchAppointments();
+      } else {
+        router.refresh();
+      }
+    }
+  }, [completeData, refetchAppointments, router]);
 
   useEffect(() => {
     if (notesData?.success) {
@@ -211,14 +267,38 @@ export function AppointmentCard({
             <div className="flex flex-col gap-2 self-end md:self-start">
               <Badge
                 variant="outline"
-                className="bg-emerald-900/20 border-emerald-900/30 text-emerald-400"
+                className={
+                  appointment.status === "COMPLETED"
+                    ? "bg-emerald-900/20 border-emerald-900/30 text-emerald-400"
+                    : appointment.status === "CANCELLED"
+                    ? "bg-red-900/20 border-red-900/30 text-red-400"
+                    : "bg-amber-900/20 border-amber-900/30 text-amber-400"
+                }
               >
                 {appointment.status}
               </Badge>
-              <div className="flex gap-2 mt-2">
+              <div className="flex gap-2 mt-2 flex-wrap">
+                {canMarkCompleted() && (
+                  <Button
+                    size="sm"
+                    onClick={handleMarkCompleted}
+                    disabled={completeLoading}
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    {completeLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        Complete
+                      </>
+                    )}
+                  </Button>
+                )}
                 <Button
                   size="sm"
-                  className="bg-emerald-600 hover:bg-emerald-700"
+                  variant="outline"
+                  className="border-emerald-900/30"
                   onClick={() => setOpen(true)}
                 >
                   View Details
@@ -295,6 +375,25 @@ export function AppointmentCard({
               </div>
             </div>
 
+            {/* Status */}
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium text-muted-foreground">
+                Status
+              </h4>
+              <Badge
+                variant="outline"
+                className={
+                  appointment.status === "COMPLETED"
+                    ? "bg-emerald-900/20 border-emerald-900/30 text-emerald-400"
+                    : appointment.status === "CANCELLED"
+                    ? "bg-red-900/20 border-red-900/30 text-red-400"
+                    : "bg-amber-900/20 border-amber-900/30 text-amber-400"
+                }
+              >
+                {appointment.status}
+              </Badge>
+            </div>
+
             {/* Patient Description */}
             {appointment.patientDescription && (
               <div className="space-y-2">
@@ -347,17 +446,19 @@ export function AppointmentCard({
                 <h4 className="text-sm font-medium text-muted-foreground">
                   Doctor Notes
                 </h4>
-                {userRole === "DOCTOR" && action !== "notes" && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setAction("notes")}
-                    className="h-7 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-900/20"
-                  >
-                    <Edit className="h-3.5 w-3.5 mr-1" />
-                    {appointment.notes ? "Edit" : "Add"}
-                  </Button>
-                )}
+                {userRole === "DOCTOR" &&
+                  action !== "notes" &&
+                  appointment.status !== "CANCELLED" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setAction("notes")}
+                      className="h-7 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-900/20"
+                    >
+                      <Edit className="h-3.5 w-3.5 mr-1" />
+                      {appointment.notes ? "Edit" : "Add"}
+                    </Button>
+                  )}
               </div>
 
               {userRole === "DOCTOR" && action === "notes" ? (
@@ -416,26 +517,51 @@ export function AppointmentCard({
           </div>
 
           <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-between sm:space-x-2">
-            {appointment.status === "SCHEDULED" && (
-              <Button
-                variant="outline"
-                onClick={handleCancelAppointment}
-                disabled={cancelLoading}
-                className="border-red-900/30 text-red-400 hover:bg-red-900/10 mt-3 sm:mt-0"
-              >
-                {cancelLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Cancelling...
-                  </>
-                ) : (
-                  <>
-                    <X className="h-4 w-4 mr-1" />
-                    Cancel Appointment
-                  </>
-                )}
-              </Button>
-            )}
+            <div className="flex gap-2">
+              {/* Mark as Complete Button - Only for doctors */}
+              {canMarkCompleted() && (
+                <Button
+                  onClick={handleMarkCompleted}
+                  disabled={completeLoading}
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                >
+                  {completeLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Completing...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Mark Complete
+                    </>
+                  )}
+                </Button>
+              )}
+
+              {/* Cancel Button - For scheduled appointments */}
+              {appointment.status === "SCHEDULED" && (
+                <Button
+                  variant="outline"
+                  onClick={handleCancelAppointment}
+                  disabled={cancelLoading}
+                  className="border-red-900/30 text-red-400 hover:bg-red-900/10 mt-3 sm:mt-0"
+                >
+                  {cancelLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Cancelling...
+                    </>
+                  ) : (
+                    <>
+                      <X className="h-4 w-4 mr-1" />
+                      Cancel Appointment
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+
             <Button
               onClick={() => setOpen(false)}
               className="bg-emerald-600 hover:bg-emerald-700"

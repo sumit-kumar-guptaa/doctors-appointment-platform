@@ -122,10 +122,14 @@ export async function checkAndAllocateCredits(user) {
 /**
  * Deducts credits for booking an appointment
  */
-export async function deductCreditsForAppointment(userId) {
+export async function deductCreditsForAppointment(userId, doctorId) {
   try {
     const user = await db.user.findUnique({
       where: { id: userId },
+    });
+
+    const doctor = await db.user.findUnique({
+      where: { id: doctorId },
     });
 
     // Ensure user has sufficient credits
@@ -133,19 +137,33 @@ export async function deductCreditsForAppointment(userId) {
       throw new Error("Insufficient credits to book an appointment");
     }
 
-    // Deduct credits and record transaction
-    const updatedUser = await db.$transaction(async (tx) => {
-      // Create transaction record
+    if (!doctor) {
+      throw new Error("Doctor not found");
+    }
+
+    // Deduct credits from patient and add to doctor
+    const result = await db.$transaction(async (tx) => {
+      // Create transaction record for patient (deduction)
       await tx.creditTransaction.create({
         data: {
           userId: user.id,
           amount: -APPOINTMENT_CREDIT_COST,
           type: "APPOINTMENT_DEDUCTION",
-          // No packageId needed for appointment deductions
+          description: `Credits deducted for appointment with Dr. ${doctor.name}`,
         },
       });
 
-      // Update user's credit balance
+      // Create transaction record for doctor (addition)
+      await tx.creditTransaction.create({
+        data: {
+          userId: doctor.id,
+          amount: APPOINTMENT_CREDIT_COST,
+          type: "APPOINTMENT_DEDUCTION", // Using same type for consistency
+          description: `Credits earned from appointment with ${user.name}`,
+        },
+      });
+
+      // Update patient's credit balance (decrement)
       const updatedUser = await tx.user.update({
         where: {
           id: user.id,
@@ -157,10 +175,22 @@ export async function deductCreditsForAppointment(userId) {
         },
       });
 
+      // Update doctor's credit balance (increment)
+      await tx.user.update({
+        where: {
+          id: doctor.id,
+        },
+        data: {
+          credits: {
+            increment: APPOINTMENT_CREDIT_COST,
+          },
+        },
+      });
+
       return updatedUser;
     });
 
-    return { success: true, user: updatedUser };
+    return { success: true, user: result };
   } catch (error) {
     console.error("Failed to deduct credits:", error);
     return { success: false, error: error.message };

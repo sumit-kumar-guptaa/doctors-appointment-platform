@@ -114,8 +114,11 @@ export async function bookAppointment(formData) {
 
     // Create the appointment in a transaction
     const result = await db.$transaction(async (tx) => {
-      // Deduct credits from patient
-      const { success, error } = await deductCreditsForAppointment(patient.id);
+      // Deduct credits from patient and add to doctor
+      const { success, error } = await deductCreditsForAppointment(
+        patient.id,
+        doctor.id
+      );
 
       if (!success) {
         throw new Error(error || "Failed to deduct credits");

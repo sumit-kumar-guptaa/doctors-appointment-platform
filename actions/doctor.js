@@ -191,13 +191,14 @@ export async function cancelAppointment(formData) {
       throw new Error("Appointment ID is required");
     }
 
-    // Find the appointment
+    // Find the appointment with both patient and doctor details
     const appointment = await db.appointment.findUnique({
       where: {
         id: appointmentId,
       },
       include: {
         patient: true,
+        doctor: true,
       },
     });
 
@@ -210,31 +211,43 @@ export async function cancelAppointment(formData) {
       throw new Error("You are not authorized to cancel this appointment");
     }
 
-    // Update the appointment status to CANCELLED
-    const updatedAppointment = await db.appointment.update({
-      where: {
-        id: appointmentId,
-      },
-      data: {
-        status: "CANCELLED",
-      },
-    });
-
-    // If the patient is cancelling, refund their credits
-    if (user.role === "PATIENT" && user.id === appointment.patientId) {
-      // Create a credit transaction for the refund
-      await db.creditTransaction.create({
+    // Perform cancellation in a transaction
+    await db.$transaction(async (tx) => {
+      // Update the appointment status to CANCELLED
+      await tx.appointment.update({
+        where: {
+          id: appointmentId,
+        },
         data: {
-          userId: user.id,
-          amount: 2,
-          type: "APPOINTMENT_DEDUCTION",
+          status: "CANCELLED",
         },
       });
 
-      // Update the user's credit balance
-      await db.user.update({
+      // Always refund credits to patient and deduct from doctor
+      // Create credit transaction for patient (refund)
+      await tx.creditTransaction.create({
+        data: {
+          userId: appointment.patientId,
+          amount: 2,
+          type: "APPOINTMENT_DEDUCTION",
+          description: `Refund for cancelled appointment with Dr. ${appointment.doctor.name}`,
+        },
+      });
+
+      // Create credit transaction for doctor (deduction)
+      await tx.creditTransaction.create({
+        data: {
+          userId: appointment.doctorId,
+          amount: -2,
+          type: "APPOINTMENT_DEDUCTION",
+          description: `Credits deducted for cancelled appointment with ${appointment.patient.name}`,
+        },
+      });
+
+      // Update patient's credit balance (increment)
+      await tx.user.update({
         where: {
-          id: user.id,
+          id: appointment.patientId,
         },
         data: {
           credits: {
@@ -242,7 +255,19 @@ export async function cancelAppointment(formData) {
           },
         },
       });
-    }
+
+      // Update doctor's credit balance (decrement)
+      await tx.user.update({
+        where: {
+          id: appointment.doctorId,
+        },
+        data: {
+          credits: {
+            decrement: 2,
+          },
+        },
+      });
+    });
 
     // Determine which path to revalidate based on user role
     if (user.role === "DOCTOR") {
@@ -251,7 +276,7 @@ export async function cancelAppointment(formData) {
       revalidatePath("/appointments");
     }
 
-    return { success: true, appointment: updatedAppointment };
+    return { success: true };
   } catch (error) {
     console.error("Failed to cancel appointment:", error);
     throw new Error("Failed to cancel appointment: " + error.message);
@@ -318,9 +343,9 @@ export async function addAppointmentNotes(formData) {
 }
 
 /**
- * Get doctor's earnings summary
+ * Mark an appointment as completed (only by doctor after end time)
  */
-export async function getDoctorEarnings() {
+export async function markAppointmentCompleted(formData) {
   const { userId } = await auth();
 
   if (!userId) {
@@ -339,45 +364,58 @@ export async function getDoctorEarnings() {
       throw new Error("Doctor not found");
     }
 
-    // Get all completed appointments for this doctor
-    const completedAppointments = await db.appointment.findMany({
+    const appointmentId = formData.get("appointmentId");
+
+    if (!appointmentId) {
+      throw new Error("Appointment ID is required");
+    }
+
+    // Find the appointment
+    const appointment = await db.appointment.findUnique({
       where: {
-        doctorId: doctor.id,
+        id: appointmentId,
+        doctorId: doctor.id, // Ensure appointment belongs to this doctor
+      },
+      include: {
+        patient: true,
+      },
+    });
+
+    if (!appointment) {
+      throw new Error("Appointment not found or not authorized");
+    }
+
+    // Check if appointment is currently scheduled
+    if (appointment.status !== "SCHEDULED") {
+      throw new Error("Only scheduled appointments can be marked as completed");
+    }
+
+    // Check if current time is after the appointment end time
+    const now = new Date();
+    const appointmentEndTime = new Date(appointment.endTime);
+
+    if (now < appointmentEndTime) {
+      throw new Error(
+        "Cannot mark appointment as completed before the scheduled end time"
+      );
+    }
+
+    // Update the appointment status to COMPLETED
+    const updatedAppointment = await db.appointment.update({
+      where: {
+        id: appointmentId,
+      },
+      data: {
         status: "COMPLETED",
       },
     });
 
-    // Calculate earnings (assuming $50 per appointment, adjust as needed)
-    const EARNINGS_PER_APPOINTMENT = 50;
-    const totalEarnings =
-      completedAppointments.length * EARNINGS_PER_APPOINTMENT;
-
-    // Calculate this month's earnings
-    const currentMonth = new Date();
-    currentMonth.setDate(1);
-    currentMonth.setHours(0, 0, 0, 0);
-
-    const thisMonthAppointments = completedAppointments.filter(
-      (appointment) => new Date(appointment.createdAt) >= currentMonth
-    );
-    const thisMonthEarnings =
-      thisMonthAppointments.length * EARNINGS_PER_APPOINTMENT;
-
-    // Simple average per month calculation
-    const averageEarningsPerMonth =
-      totalEarnings > 0
-        ? totalEarnings / Math.max(1, new Date().getMonth() + 1)
-        : 0;
-
-    return {
-      earnings: {
-        totalEarnings,
-        thisMonthEarnings,
-        completedAppointments: completedAppointments.length,
-        averageEarningsPerMonth,
-      },
-    };
+    revalidatePath("/doctor");
+    return { success: true, appointment: updatedAppointment };
   } catch (error) {
-    throw new Error("Failed to fetch doctor earnings: " + error.message);
+    console.error("Failed to mark appointment as completed:", error);
+    throw new Error(
+      "Failed to mark appointment as completed: " + error.message
+    );
   }
 }
