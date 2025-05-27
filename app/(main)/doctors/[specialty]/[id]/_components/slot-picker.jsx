@@ -1,4 +1,3 @@
-// /app/doctors/[id]/_components/slot-picker.jsx
 "use client";
 
 import { useState } from "react";
