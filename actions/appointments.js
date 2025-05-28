@@ -112,36 +112,31 @@ export async function bookAppointment(formData) {
     // Create a new Vonage Video API session
     const sessionId = await createVideoSession();
 
-    // Create the appointment in a transaction
-    const result = await db.$transaction(async (tx) => {
-      // Deduct credits from patient and add to doctor
-      const { success, error } = await deductCreditsForAppointment(
-        patient.id,
-        doctor.id
-      );
+    // Deduct credits from patient and add to doctor
+    const { success, error } = await deductCreditsForAppointment(
+      patient.id,
+      doctor.id
+    );
 
-      if (!success) {
-        throw new Error(error || "Failed to deduct credits");
-      }
+    if (!success) {
+      throw new Error(error || "Failed to deduct credits");
+    }
 
-      // Create the appointment with the video session ID
-      const appointment = await tx.appointment.create({
-        data: {
-          patientId: patient.id,
-          doctorId: doctor.id,
-          startTime,
-          endTime,
-          patientDescription,
-          status: "SCHEDULED",
-          videoSessionId: sessionId, // Store the Vonage session ID
-        },
-      });
-
-      return { appointment };
+    // Create the appointment with the video session ID
+    const appointment = await db.appointment.create({
+      data: {
+        patientId: patient.id,
+        doctorId: doctor.id,
+        startTime,
+        endTime,
+        patientDescription,
+        status: "SCHEDULED",
+        videoSessionId: sessionId, // Store the Vonage session ID
+      },
     });
 
     revalidatePath("/appointments");
-    return { success: true, appointment: result.appointment };
+    return { success: true, appointment: appointment };
   } catch (error) {
     console.error("Failed to book appointment:", error);
     throw new Error("Failed to book appointment:" + error.message);
