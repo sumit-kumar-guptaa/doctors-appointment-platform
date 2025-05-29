@@ -230,7 +230,6 @@ export async function cancelAppointment(formData) {
           userId: appointment.patientId,
           amount: 2,
           type: "APPOINTMENT_DEDUCTION",
-          description: `Refund for cancelled appointment with Dr. ${appointment.doctor.name}`,
         },
       });
 
@@ -240,7 +239,6 @@ export async function cancelAppointment(formData) {
           userId: appointment.doctorId,
           amount: -2,
           type: "APPOINTMENT_DEDUCTION",
-          description: `Credits deducted for cancelled appointment with ${appointment.patient.name}`,
         },
       });
 
