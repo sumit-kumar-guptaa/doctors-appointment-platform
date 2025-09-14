@@ -2,13 +2,17 @@ import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import Stripe from 'stripe';
 import { clerkClient } from '@clerk/nextjs/server';
-import { PrismaClient } from '@prisma/client';
+import { db as prisma } from '@/lib/prisma';
+
+// Validate Stripe configuration
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('STRIPE_SECRET_KEY is not configured in environment variables');
+}
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2023-10-16',
 });
 
-const prisma = new PrismaClient();
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 export async function POST(req) {

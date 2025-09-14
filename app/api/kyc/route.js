@@ -3,7 +3,14 @@ import { auth } from '@clerk/nextjs/server';
 import { db as prisma } from '@/lib/prisma';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+// Validate Stripe configuration
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('STRIPE_SECRET_KEY is not configured in environment variables');
+}
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: '2023-10-16',
+});
 
 // KYC Verification Endpoint
 export async function POST(request) {
