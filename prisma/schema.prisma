@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,129 +7,199 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id                String    @id @default(uuid())
-  clerkUserId       String    @unique // Clerk's user ID
-  email             String    @unique
-  name              String?
-  imageUrl          String?
-  role              UserRole  @default(UNASSIGNED) // UNASSIGNED, PATIENT, DOCTOR, ADMIN
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  
-  // Patient-specific fields
-  credits           Int       @default(2) // Accumulated credit balance
-  
-  // Doctor-specific fields
-  specialty         String?
-  experience        Int?      // Years of experience
-  credentialUrl     String?   // Document URL
-  description       String?   @db.Text
-  verificationStatus VerificationStatus?  @default(PENDING)
-  
-  // Relations
-  patientAppointments Appointment[] @relation("PatientAppointments")
-  doctorAppointments  Appointment[] @relation("DoctorAppointments")
-  availabilities      Availability[]
-  transactions        CreditTransaction[]
-  payouts             Payout[]
+model healthcare_providers {
+  id               String    @id
+  licenseNumber    String    @unique
+  specialty        String
+  verified         Boolean   @default(false)
+  organization     String
+  email            String    @unique
+  phoneNumber      String
+  address          String?
+  verificationDate DateTime?
+  verifiedBy       String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+}
+
+model medical_consultations {
+  id                  String             @id
+  sessionId           String             @unique
+  patientAge          Int?
+  patientGender       String?
+  symptoms            String[]
+  medicalHistory      String[]
+  query               String
+  aiResponse          String
+  urgencyLevel        UrgencyLevel       @default(LOW)
+  diagnosisConfidence Float?
+  recommendedActions  String[]
+  emergencyFlags      Boolean            @default(false)
+  userId              String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime
+  completedAt         DateTime?
+  doctorId            String?
+  status              ConsultationStatus @default(PENDING)
+  type                ConsultationType   @default(CHAT)
+  videoArchiveId      String?
+  videoSessionId      String?
+  users               users?             @relation(fields: [userId], references: [id])
+}
+
+model notifications {
+  id        String           @id
+  type      NotificationType
+  title     String
+  message   String
+  read      Boolean          @default(false)
+  userId    String
+  createdAt DateTime         @default(now())
+  users     users            @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model patents {
+  id                  String         @id
+  title               String
+  description         String
+  abstract            String?
+  category            PatentCategory
+  status              PatentStatus   @default(DRAFT)
+  patentNumber        String?        @unique
+  applicationDate     DateTime?
+  publicationDate     DateTime?
+  expiryDate          DateTime?
+  aiScore             Float?
+  marketPotential     String?
+  technicalComplexity String?
+  documents           String[]
+  images              String[]
+  userId              String
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime
+  users               users          @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model subscriptions {
+  id                 String             @id
+  planType           SubscriptionPlan
+  status             SubscriptionStatus @default(ACTIVE)
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean            @default(false)
+  maxPatents         Int
+  maxConsultations   Int
+  aiAnalysisEnabled  Boolean            @default(false)
+  prioritySupport    Boolean            @default(false)
+  userId             String
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime
+  users              users              @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model system_analytics {
+  id                  String   @id
+  totalUsers          Int
+  totalPatents        Int
+  totalConsultations  Int
+  activeUsers         Int
+  aiAccuracy          Float?
+  avgResponseTime     Float?
+  emergencyDetections Int?
+  serverUptime        Float?
+  errorRate           Float?
+  recordedAt          DateTime @default(now())
+}
+
+model users {
+  id                    String                  @id
+  clerkId               String                  @unique
+  email                 String                  @unique
+  firstName             String?
+  lastName              String?
+  imageUrl              String?
+  role                  UserRole                @default(USER)
+  organization          String?
+  jobTitle              String?
+  phoneNumber           String?
+  country               String?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime
+  medical_consultations medical_consultations[]
+  notifications         notifications[]
+  patents               patents[]
+  subscriptions         subscriptions[]
 }
 
 enum UserRole {
-  UNASSIGNED
-  PATIENT
-  DOCTOR
+  USER
   ADMIN
+  RESEARCHER
+  HEALTHCARE_PROVIDER
 }
 
-enum VerificationStatus {
+enum ConsultationStatus {
   PENDING
-  VERIFIED
-  REJECTED
-}
-
-model Availability {
-  id        String   @id @default(uuid())
-  doctorId  String
-  doctor    User     @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-  startTime DateTime
-  endTime   DateTime
-  status    SlotStatus @default(AVAILABLE)
-  
-  @@index([doctorId, startTime])
-}
-
-enum SlotStatus {
-  AVAILABLE
-  BOOKED
-  BLOCKED
-}
-
-model Appointment {
-  id                String   @id @default(uuid())
-  patientId         String
-  patient           User     @relation("PatientAppointments", fields: [patientId], references: [id])
-  doctorId          String
-  doctor            User     @relation("DoctorAppointments", fields: [doctorId], references: [id])
-  startTime         DateTime // Start time of appointment
-  endTime           DateTime // End time of appointment
-  status            AppointmentStatus @default(SCHEDULED)
-  notes             String?  @db.Text
-  patientDescription String? @db.Text
-    
-  // Video session fields
-  videoSessionId    String?  // Vonage Video API Session ID
-  videoSessionToken String?  // Optional: Can store tokens if needed
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  @@index([status, startTime])
-  @@index([doctorId, startTime])
-}
-
-enum AppointmentStatus {
-  SCHEDULED
+  IN_PROGRESS
   COMPLETED
   CANCELLED
 }
 
-model CreditTransaction {
-  id                String   @id @default(uuid())
-  userId            String
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  amount            Int      // Positive for additions, negative for usage
-  type              TransactionType
-  packageId         String?  // Reference to which package was purchased
-  createdAt         DateTime @default(now())
+enum ConsultationType {
+  CHAT
+  VIDEO
+  ANALYSIS
+  EMERGENCY
 }
 
-enum TransactionType {
-  CREDIT_PURCHASE     // Credits purchased through Clerk Billing
-  APPOINTMENT_DEDUCTION // Credit used for appointment
-  ADMIN_ADJUSTMENT      // Manual adjustment by admin
+enum NotificationType {
+  PATENT_STATUS_UPDATE
+  MEDICAL_CONSULTATION
+  SUBSCRIPTION_UPDATE
+  SYSTEM_ANNOUNCEMENT
+  AI_ANALYSIS_COMPLETE
 }
 
-model Payout {
-  id              String        @id @default(uuid())
-  doctorId        String
-  doctor          User          @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-  amount          Float         // Total payout amount in USD
-  credits         Int           // Number of credits being paid out
-  platformFee     Float         // Platform fee deducted (2 USD per credit)
-  netAmount       Float         // Amount doctor receives (8 USD per credit)
-  paypalEmail     String        // Doctor's PayPal email for payout
-  status          PayoutStatus  @default(PROCESSING)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  processedAt     DateTime?     // When admin marked it as processed
-  processedBy     String?       // Admin who processed it
-
-  @@index([status, createdAt])
-  @@index([doctorId, status])
+enum PatentCategory {
+  MEDICAL_DEVICE
+  PHARMACEUTICAL
+  BIOTECHNOLOGY
+  DIGITAL_HEALTH
+  DIAGNOSTICS
+  THERAPEUTICS
+  SURGICAL_INSTRUMENTS
+  HEALTH_MONITORING
+  AI_HEALTHCARE
+  TELEMEDICINE
 }
 
-enum PayoutStatus {
-  PROCESSING
-  PROCESSED
+enum PatentStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  PUBLISHED
+  EXPIRED
+}
+
+enum SubscriptionPlan {
+  FREE
+  BASIC
+  PREMIUM
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  EXPIRED
+}
+
+enum UrgencyLevel {
+  LOW
+  MODERATE
+  HIGH
+  EMERGENCY
 }

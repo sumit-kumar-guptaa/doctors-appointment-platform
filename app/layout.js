@@ -1,19 +1,20 @@
+"use client";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "sonner";
-import Header from "@/components/header";
+import { DoctorsSidebar } from "@/components/doctors-sidebar";
+import { InteractiveFooter } from "@/components/footer";
 import { dark } from "@clerk/themes";
 import { ThemeProvider } from "@/components/theme-provider";
+import { usePathname } from "next/navigation";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata = {
-  title: "Doctors Appointment App",
-  description: "Connect with doctors anytime, anywhere",
-};
-
 export default function RootLayout({ children }) {
+  const pathname = usePathname();
+  const isAuthPage = pathname?.startsWith('/sign-in') || pathname?.startsWith('/sign-up');
+
   return (
     <ClerkProvider
       appearance={{
@@ -23,23 +24,25 @@ export default function RootLayout({ children }) {
       <html lang="en" suppressHydrationWarning>
         <head>
           <link rel="icon" href="/logo.png" sizes="any" />
+          <title>MediMeet - Doctors Appointment Platform</title>
+          <meta name="description" content="Connect with doctors anytime, anywhere" />
         </head>
-        <body className={`${inter.className}`}>
+        <body className={`${inter.className} overflow-x-hidden`}>
           <ThemeProvider
             attribute="class"
             defaultTheme="dark"
             enableSystem
             disableTransitionOnChange
           >
-            <Header />
-            <main className="min-h-screen">{children}</main>
+            {isAuthPage ? (
+              <main className="min-h-screen w-full">{children}</main>
+            ) : (
+              <DoctorsSidebar>
+                <main className="min-h-screen w-full">{children}</main>
+              </DoctorsSidebar>
+            )}
             <Toaster richColors />
-
-            <footer className="bg-muted/50 py-12">
-              <div className="container mx-auto px-4 text-center text-gray-200">
-                <p>Made with 💗 by RoadsideCoder</p>
-              </div>
-            </footer>
+            <InteractiveFooter />
           </ThemeProvider>
         </body>
       </html>
