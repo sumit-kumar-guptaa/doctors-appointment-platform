@@ -1,11 +1,23 @@
-import { redirect } from "next/navigation";
+"use client";
+
 import Link from "next/link";
 import { ArrowLeft, CreditCard, Shield, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import Pricing from "@/components/pricing";
+import { Button } from "@/components/ui/button";
+import dynamic from "next/dynamic";
 
-export default async function PricingPage() {
+// Dynamically import the Pricing component to avoid SSR issues
+const Pricing = dynamic(() => import("@/components/pricing"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center py-12">
+      <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  )
+});
+
+export default function PricingPage() {
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
       {/* Header Section */}
