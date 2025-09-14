@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Find Doctors - MediMeet",
+  title: "Find Doctors - AARAGYA",
   description: "Browse and book appointments with top healthcare providers",
 };
 

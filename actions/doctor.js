@@ -152,9 +152,10 @@ export async function getDoctorAppointments() {
       },
       include: {
         patient: true,
+        availability: true,
       },
       orderBy: {
-        startTime: "asc",
+        createdAt: "asc",
       },
     });
 
@@ -415,5 +416,139 @@ export async function markAppointmentCompleted(formData) {
     throw new Error(
       "Failed to mark appointment as completed: " + error.message
     );
+  }
+}
+
+/**
+ * Submit doctor verification with documents
+ */
+export async function submitDoctorVerification(formData) {
+  const { userId } = await auth();
+
+  if (!userId) {
+    throw new Error("Unauthorized");
+  }
+
+  try {
+    // Find the doctor
+    const doctor = await db.user.findUnique({
+      where: {
+        clerkUserId: userId,
+        role: "DOCTOR",
+      },
+    });
+
+    if (!doctor) {
+      throw new Error("Doctor not found");
+    }
+
+    // Extract form data
+    const medicalDegree = formData.get("medicalDegree");
+    const licenseNumber = formData.get("licenseNumber");
+    const specialty = formData.get("specialty");
+    const experience = formData.get("experience");
+    const workingHospital = formData.get("workingHospital");
+    const consultationFee = formData.get("consultationFee");
+    const description = formData.get("description");
+
+    // Handle file uploads (in a real app, you'd upload to a cloud storage service)
+    const medicalDegreeFile = formData.get("medicalDegreeUrl");
+    const medicalLicenseFile = formData.get("medicalLicenseUrl");
+    const identityProofFile = formData.get("identityProofUrl");
+    const experienceCertFile = formData.get("experienceCertUrl");
+
+    // For now, we'll simulate file URLs (in production, upload to cloud storage)
+    const generateFileUrl = (file, type) => {
+      if (!file) return null;
+      return `https://storage.example.com/documents/${doctor.id}/${type}_${Date.now()}.${file.name.split('.').pop()}`;
+    };
+
+    const medicalDegreeUrl = generateFileUrl(medicalDegreeFile, "degree");
+    const medicalLicenseUrl = generateFileUrl(medicalLicenseFile, "license");
+    const identityProofUrl = generateFileUrl(identityProofFile, "identity");
+    const experienceCertUrl = generateFileUrl(experienceCertFile, "experience");
+
+    // Update doctor profile with verification data
+    const updatedDoctor = await db.user.update({
+      where: {
+        id: doctor.id,
+      },
+      data: {
+        medicalDegree,
+        licenseNumber,
+        specialty,
+        experience: experience ? parseInt(experience) : null,
+        workingHospital,
+        consultationFee: consultationFee ? parseFloat(consultationFee) : null,
+        description,
+        medicalDegreeUrl,
+        medicalLicenseUrl,
+        identityProofUrl,
+        experienceCertUrl,
+        verificationStatus: "UNDER_REVIEW",
+        verificationNotes: null,
+        verifiedAt: null,
+        verifiedBy: null,
+      },
+    });
+
+    revalidatePath("/doctor/verification");
+    revalidatePath("/doctor");
+    
+    return { 
+      success: true, 
+      doctor: updatedDoctor,
+      message: "Verification documents submitted successfully!" 
+    };
+  } catch (error) {
+    console.error("Failed to submit verification:", error);
+    throw new Error("Failed to submit verification: " + error.message);
+  }
+}
+
+/**
+ * Get doctor verification status and data
+ */
+export async function getDoctorVerificationStatus() {
+  const { userId } = await auth();
+
+  if (!userId) {
+    throw new Error("Unauthorized");
+  }
+
+  try {
+    const doctor = await db.user.findUnique({
+      where: {
+        clerkUserId: userId,
+        role: "DOCTOR",
+      },
+      select: {
+        id: true,
+        verificationStatus: true,
+        medicalDegree: true,
+        licenseNumber: true,
+        specialty: true,
+        experience: true,
+        workingHospital: true,
+        consultationFee: true,
+        description: true,
+        medicalDegreeUrl: true,
+        medicalLicenseUrl: true,
+        identityProofUrl: true,
+        experienceCertUrl: true,
+        verificationNotes: true,
+        verifiedAt: true,
+        verifiedBy: true,
+      },
+    });
+
+    if (!doctor) {
+      throw new Error("Doctor not found");
+    }
+
+    return doctor;
+  } catch (error) {
+    console.error("Failed to get verification status:", error);
+    throw new Error("Failed to get verification status: " + error.message);
   }
 }

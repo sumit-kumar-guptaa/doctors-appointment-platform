@@ -39,7 +39,9 @@ export async function getPendingDoctors() {
     const pendingDoctors = await db.user.findMany({
       where: {
         role: "DOCTOR",
-        verificationStatus: "PENDING",
+        verificationStatus: {
+          in: ["PENDING", "UNDER_REVIEW"]
+        },
       },
       orderBy: {
         createdAt: "desc",
@@ -78,7 +80,7 @@ export async function getVerifiedDoctors() {
 }
 
 /**
- * Updates a doctor's verification status
+ * Updates a doctor's verification status with detailed review
  */
 export async function updateDoctorStatus(formData) {
   const isAdmin = await verifyAdmin();
@@ -86,19 +88,31 @@ export async function updateDoctorStatus(formData) {
 
   const doctorId = formData.get("doctorId");
   const status = formData.get("status");
+  const verificationNotes = formData.get("verificationNotes") || null;
 
   if (!doctorId || !["VERIFIED", "REJECTED"].includes(status)) {
     throw new Error("Invalid input");
   }
 
   try {
+    // Get admin user info
+    const { userId } = await auth();
+    const admin = await db.user.findUnique({
+      where: { clerkUserId: userId },
+    });
+
+    const updateData = {
+      verificationStatus: status,
+      verificationNotes,
+      verifiedAt: status === "VERIFIED" ? new Date() : null,
+      verifiedBy: admin?.id || null,
+    };
+
     await db.user.update({
       where: {
         id: doctorId,
       },
-      data: {
-        verificationStatus: status,
-      },
+      data: updateData,
     });
 
     revalidatePath("/admin");
@@ -106,6 +120,53 @@ export async function updateDoctorStatus(formData) {
   } catch (error) {
     console.error("Failed to update doctor status:", error);
     throw new Error(`Failed to update doctor status: ${error.message}`);
+  }
+}
+
+/**
+ * Get detailed doctor verification data for admin review
+ */
+export async function getDoctorVerificationDetails(doctorId) {
+  const isAdmin = await verifyAdmin();
+  if (!isAdmin) throw new Error("Unauthorized");
+
+  try {
+    const doctor = await db.user.findUnique({
+      where: {
+        id: doctorId,
+        role: "DOCTOR",
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        verificationStatus: true,
+        medicalDegree: true,
+        licenseNumber: true,
+        specialty: true,
+        experience: true,
+        workingHospital: true,
+        consultationFee: true,
+        description: true,
+        medicalDegreeUrl: true,
+        medicalLicenseUrl: true,
+        identityProofUrl: true,
+        experienceCertUrl: true,
+        verificationNotes: true,
+        verifiedAt: true,
+        verifiedBy: true,
+        createdAt: true,
+      },
+    });
+
+    if (!doctor) {
+      throw new Error("Doctor not found");
+    }
+
+    return { doctor };
+  } catch (error) {
+    console.error("Failed to get doctor verification details:", error);
+    throw new Error("Failed to get doctor verification details");
   }
 }
 

@@ -88,71 +88,71 @@ body {
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --background: oklch(0.99 0.01 200); /* Very light blue-white */
+  --foreground: oklch(0.15 0.02 220); /* Deep blue-gray */
+  --card: oklch(1 0 0); /* Pure white cards */
+  --card-foreground: oklch(0.15 0.02 220);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --popover-foreground: oklch(0.15 0.02 220);
+  --primary: oklch(0.55 0.20 210); /* Medical blue primary */
+  --primary-foreground: oklch(0.99 0.01 200);
+  --secondary: oklch(0.65 0.15 160); /* Medical teal secondary */
+  --secondary-foreground: oklch(0.99 0.01 200);
+  --muted: oklch(0.96 0.01 200); /* Light blue-gray */
+  --muted-foreground: oklch(0.45 0.05 220);
+  --accent: oklch(0.60 0.18 190); /* Accent blue */
+  --accent-foreground: oklch(0.99 0.01 200);
+  --destructive: oklch(0.60 0.22 15); /* Medical red */
+  --border: oklch(0.90 0.02 200); /* Light blue border */
+  --input: oklch(0.96 0.01 200);
+  --ring: oklch(0.55 0.20 210); /* Primary blue ring */
+  --chart-1: oklch(0.55 0.20 210); /* Medical blue */
+  --chart-2: oklch(0.65 0.15 160); /* Medical teal */
+  --chart-3: oklch(0.70 0.12 140); /* Medical green */
+  --chart-4: oklch(0.60 0.18 190); /* Light blue */
+  --chart-5: oklch(0.45 0.15 200); /* Deep blue */
+  --sidebar: oklch(0.98 0.01 210); /* Light blue sidebar */
+  --sidebar-foreground: oklch(0.15 0.02 220);
+  --sidebar-primary: oklch(0.55 0.20 210);
+  --sidebar-primary-foreground: oklch(0.99 0.01 200);
+  --sidebar-accent: oklch(0.65 0.15 160);
+  --sidebar-accent-foreground: oklch(0.15 0.02 220);
+  --sidebar-border: oklch(0.90 0.02 200);
+  --sidebar-ring: oklch(0.55 0.20 210);
 }
 
 .dark {
-  --background: oklch(0.08 0.04 275); /* Dark purple background */
-  --foreground: oklch(0.985 0.02 30); /* Light orange foreground */
-  --card: oklch(0.12 0.06 280); /* Darker purple card */
-  --card-foreground: oklch(0.985 0.02 30); /* Light orange text */
-  --popover: oklch(0.12 0.06 280);
-  --popover-foreground: oklch(0.985 0.02 30);
-  --primary: oklch(0.65 0.25 285); /* Bright purple primary */
-  --primary-foreground: oklch(0.98 0.05 40); /* Light orange on primary */
-  --secondary: oklch(0.75 0.15 35); /* Light orange secondary */
-  --secondary-foreground: oklch(0.15 0.08 280); /* Dark purple on secondary */
-  --muted: oklch(0.20 0.05 275);
-  --muted-foreground: oklch(0.70 0.05 30); /* Muted orange */
-  --accent: oklch(0.70 0.20 40); /* Orange accent */
-  --accent-foreground: oklch(0.15 0.08 280);
-  --destructive: oklch(0.62 0.25 15); /* Red-orange destructive */
-  --border: oklch(0.25 0.05 275);
-  --input: oklch(0.20 0.05 275);
-  --ring: oklch(0.65 0.25 285); /* Purple ring */
-  --chart-1: oklch(0.65 0.25 285); /* Purple */
-  --chart-2: oklch(0.70 0.20 40); /* Orange */
-  --chart-3: oklch(0.60 0.18 320); /* Purple-pink */
-  --chart-4: oklch(0.75 0.15 35); /* Light orange */
-  --chart-5: oklch(0.55 0.20 260); /* Deep purple */
-  --sidebar: oklch(0.10 0.05 280);
-  --sidebar-foreground: oklch(0.985 0.02 30);
-  --sidebar-primary: oklch(0.65 0.25 285);
-  --sidebar-primary-foreground: oklch(0.98 0.05 40);
-  --sidebar-accent: oklch(0.70 0.20 40);
-  --sidebar-accent-foreground: oklch(0.15 0.08 280);
-  --sidebar-border: oklch(0.25 0.05 275);
-  --sidebar-ring: oklch(0.65 0.25 285);
+  --background: oklch(0.08 0.02 220); /* Dark blue-gray background */
+  --foreground: oklch(0.95 0.01 200); /* Light blue-white foreground */
+  --card: oklch(0.12 0.03 220); /* Dark blue cards */
+  --card-foreground: oklch(0.95 0.01 200);
+  --popover: oklch(0.12 0.03 220);
+  --popover-foreground: oklch(0.95 0.01 200);
+  --primary: oklch(0.65 0.18 210); /* Brighter medical blue */
+  --primary-foreground: oklch(0.08 0.02 220);
+  --secondary: oklch(0.70 0.12 160); /* Bright medical teal */
+  --secondary-foreground: oklch(0.08 0.02 220);
+  --muted: oklch(0.20 0.02 220);
+  --muted-foreground: oklch(0.70 0.05 200); /* Muted blue */
+  --accent: oklch(0.70 0.15 190); /* Bright accent blue */
+  --accent-foreground: oklch(0.08 0.02 220);
+  --destructive: oklch(0.65 0.20 15); /* Bright medical red */
+  --border: oklch(0.25 0.03 220);
+  --input: oklch(0.20 0.02 220);
+  --ring: oklch(0.65 0.18 210); /* Primary blue ring */
+  --chart-1: oklch(0.65 0.18 210); /* Medical blue */
+  --chart-2: oklch(0.70 0.12 160); /* Medical teal */
+  --chart-3: oklch(0.75 0.10 140); /* Medical green */
+  --chart-4: oklch(0.70 0.15 190); /* Light blue */
+  --chart-5: oklch(0.50 0.12 200); /* Deep blue */
+  --sidebar: oklch(0.10 0.02 220);
+  --sidebar-foreground: oklch(0.95 0.01 200);
+  --sidebar-primary: oklch(0.65 0.18 210);
+  --sidebar-primary-foreground: oklch(0.08 0.02 220);
+  --sidebar-accent: oklch(0.70 0.12 160);
+  --sidebar-accent-foreground: oklch(0.08 0.02 220);
+  --sidebar-border: oklch(0.25 0.03 220);
+  --sidebar-ring: oklch(0.65 0.18 210);
 }
 
 @layer base {
@@ -165,7 +165,7 @@ body {
 }
 
 @utility gradient {
-  @apply bg-gradient-to-b from-purple-500 to-orange-400;
+  @apply bg-gradient-to-b from-blue-500 to-teal-400;
 }
 
 @utility gradient-title {

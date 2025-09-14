@@ -22,13 +22,38 @@ model User {
   credentialUrl        String?
   description          String?
   verificationStatus   VerificationStatus? @default(PENDING)
+  
+  // Doctor Verification Fields
+  medicalDegree        String?
+  licenseNumber        String?
+  workingHospital      String?
+  consultationFee      Float?
+  medicalDegreeUrl     String?
+  medicalLicenseUrl    String?
+  identityProofUrl     String?
+  experienceCertUrl    String?
+  verificationNotes    String?
+  verifiedAt           DateTime?
+  verifiedBy           String?
+  
+  // Emergency Features
+  isEmergencyDoctor    Boolean             @default(false)
+  isOnline             Boolean             @default(false)
+  responseTime         String?
 
   // Relations
-  doctorAvailabilities Availability[]      @relation("DoctorAvailability")
-  doctorAppointments   Appointment[]       @relation("DoctorAppointments")
-  patientAppointments  Appointment[]       @relation("PatientAppointments")
+  doctorAvailabilities Availability[]       @relation("DoctorAvailability")
+  doctorAppointments   Appointment[]        @relation("DoctorAppointments")
+  patientAppointments  Appointment[]        @relation("PatientAppointments")
   transactions         CreditTransaction[]
   payouts              Payout[]
+  emergencyCases       EmergencyCase[]      @relation("DoctorEmergencyCases")
+  patientEmergencies   EmergencyCase[]      @relation("PatientEmergencyCases")
+  emergencyCalls       EmergencyCall[]      @relation("DoctorEmergencyCalls")
+  patientCalls         EmergencyCall[]      @relation("PatientEmergencyCalls")
+  consultations        Consultation[]
+  notifications        Notification[]
+  kycVerifications     KycVerification[]
 }
 
 model Availability {
@@ -64,6 +89,114 @@ model Appointment {
   availability Availability? @relation(fields: [availabilityId], references: [id], onDelete: SetNull)
 
   @@index([status, createdAt])
+}
+
+model EmergencyCase {
+  id                  String             @id @default(cuid())
+  userId              String?            // Can be null for anonymous emergencies
+  symptoms            String             // JSON array of symptoms
+  description         String
+  patientInfo         String             // JSON object with patient details
+  emergencyScore      Int                @default(0) // 0-10 severity score
+  isEmergency         Boolean            @default(false)
+  status              EmergencyStatus    @default(PENDING)
+  assignedDoctorId    String?
+  kycVerificationId   String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  // Relations
+  patient            User?              @relation("PatientEmergencyCases", fields: [userId], references: [id])
+  assignedDoctor     User?              @relation("DoctorEmergencyCases", fields: [assignedDoctorId], references: [id])
+  kycVerification    KycVerification?   @relation(fields: [kycVerificationId], references: [id])
+  emergencyCalls     EmergencyCall[]
+  consultations      Consultation[]
+
+  @@index([status, isEmergency, createdAt])
+}
+
+model EmergencyCall {
+  id              String          @id @default(cuid())
+  emergencyId     String
+  doctorId        String
+  patientId       String?
+  callType        CallType        @default(VIDEO)
+  roomName        String
+  status          CallStatus      @default(CONNECTING)
+  startedAt       DateTime        @default(now())
+  endedAt         DateTime?
+  duration        Int?            // in seconds
+  endReason       String?
+  recordingUrl    String?
+
+  // Relations
+  emergency       EmergencyCase   @relation(fields: [emergencyId], references: [id])
+  doctor          User            @relation("DoctorEmergencyCalls", fields: [doctorId], references: [id])
+  patient         User?           @relation("PatientEmergencyCalls", fields: [patientId], references: [id])
+
+  @@index([status, startedAt])
+}
+
+model KycVerification {
+  id                    String               @id @default(cuid())
+  userId                String?
+  patientInfo           String               // JSON object
+  aadharNumber          String
+  panNumber             String
+  insuranceNumber       String?
+  verificationStatus    KycStatus            @default(PENDING)
+  verificationFee       Float                @default(1.00)
+  paymentIntentId       String?
+  verificationDetails   String?              // JSON object with verification results
+  verifiedAt            DateTime?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+
+  // Relations
+  user                  User?                @relation(fields: [userId], references: [id])
+  emergencyCases        EmergencyCase[]
+
+  @@unique([userId])
+  @@index([verificationStatus, createdAt])
+}
+
+model Consultation {
+  id              String           @id @default(cuid())
+  emergencyId     String?
+  doctorId        String
+  patientId       String?
+  type            ConsultationType @default(REGULAR)
+  duration        Int?             // in seconds
+  summary         String?          // JSON object
+  diagnosis       String?
+  prescription    String?          // JSON object
+  followUpDate    DateTime?
+  status          ConsultationStatus @default(SCHEDULED)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  // Relations
+  emergency       EmergencyCase?   @relation(fields: [emergencyId], references: [id])
+  doctor          User             @relation(fields: [doctorId], references: [id])
+
+  @@index([status, type, createdAt])
+}
+
+model Notification {
+  id          String              @id @default(cuid())
+  doctorId    String?
+  patientId   String?
+  type        NotificationType
+  title       String
+  message     String
+  data        String?             // JSON object
+  isRead      Boolean             @default(false)
+  createdAt   DateTime            @default(now())
+
+  // Relations
+  doctor      User?               @relation(fields: [doctorId], references: [id])
+
+  @@index([isRead, createdAt])
 }
 
 model CreditTransaction {
@@ -111,6 +244,7 @@ enum UserRole {
 
 enum VerificationStatus {
   PENDING
+  UNDER_REVIEW
   VERIFIED
   REJECTED
 }
@@ -138,4 +272,61 @@ enum PayoutStatus {
   PROCESSING
   COMPLETED
   FAILED
+}
+
+enum EmergencyStatus {
+  PENDING
+  URGENT
+  IN_PROGRESS
+  CONSULTATION
+  CONSULTATION_COMPLETED
+  RESOLVED
+  CANCELLED
+}
+
+enum CallStatus {
+  CONNECTING
+  CONNECTED
+  ON_HOLD
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum CallType {
+  VIDEO
+  AUDIO
+  CHAT
+}
+
+enum KycStatus {
+  PENDING
+  IN_PROGRESS
+  VERIFIED
+  REJECTED
+  EXPIRED
+}
+
+enum ConsultationType {
+  REGULAR
+  EMERGENCY
+  FOLLOW_UP
+  CONSULTATION
+}
+
+enum ConsultationStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum NotificationType {
+  EMERGENCY_ALERT
+  EMERGENCY_CALL
+  APPOINTMENT_REMINDER
+  CONSULTATION_REQUEST
+  SYSTEM_NOTIFICATION
+  PAYMENT_UPDATE
 }

@@ -188,6 +188,9 @@ export async function generateVideoToken(formData) {
       where: {
         id: appointmentId,
       },
+      include: {
+        availability: true,
+      },
     });
 
     if (!appointment) {
@@ -206,7 +209,10 @@ export async function generateVideoToken(formData) {
 
     // Verify the appointment is within a valid time range (e.g., starting 5 minutes before scheduled time)
     const now = new Date();
-    const appointmentTime = new Date(appointment.startTime);
+    if (!appointment.availability) {
+      throw new Error("Appointment availability information not found");
+    }
+    const appointmentTime = new Date(appointment.availability.startTime);
     const timeDifference = (appointmentTime - now) / (1000 * 60); // difference in minutes
 
     if (timeDifference > 30) {
@@ -217,7 +223,7 @@ export async function generateVideoToken(formData) {
 
     // Generate a token for the video session
     // Token expires 2 hours after the appointment start time
-    const appointmentEndTime = new Date(appointment.endTime);
+    const appointmentEndTime = new Date(appointment.availability.endTime);
     const expirationTime =
       Math.floor(appointmentEndTime.getTime() / 1000) + 60 * 60; // 1 hour after end time
 
@@ -307,7 +313,11 @@ export async function getAvailableTimeSlots(doctorId) {
     });
 
     if (!availability) {
-      throw new Error("No availability set by doctor");
+      // Return empty availability instead of throwing error
+      return {
+        days: [],
+        message: "Doctor hasn't set availability yet"
+      };
     }
 
     // Get the next 4 days
@@ -320,9 +330,14 @@ export async function getAvailableTimeSlots(doctorId) {
       where: {
         doctorId: doctor.id,
         status: "SCHEDULED",
-        startTime: {
-          lte: lastDay,
+        availability: {
+          startTime: {
+            lte: lastDay,
+          },
         },
+      },
+      include: {
+        availability: true,
       },
     });
 
@@ -365,8 +380,9 @@ export async function getAvailableTimeSlots(doctorId) {
         }
 
         const overlaps = existingAppointments.some((appointment) => {
-          const aStart = new Date(appointment.startTime);
-          const aEnd = new Date(appointment.endTime);
+          if (!appointment.availability) return false;
+          const aStart = new Date(appointment.availability.startTime);
+          const aEnd = new Date(appointment.availability.endTime);
 
           return (
             (current >= aStart && current < aEnd) ||

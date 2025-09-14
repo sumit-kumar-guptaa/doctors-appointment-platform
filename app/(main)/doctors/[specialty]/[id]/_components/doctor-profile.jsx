@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { SlotPicker } from "./slot-picker";
+import { EnhancedSlotPicker } from "@/components/enhanced-slot-picker";
 import { AppointmentForm } from "./appointment-form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -187,10 +187,10 @@ export function DoctorProfile({ doctor, availableDays }) {
               <CardContent className="space-y-6">
                 {totalSlots > 0 ? (
                   <>
-                    {/* Slot selection step */}
+                    {/* Enhanced Slot selection with calendar */}
                     {!selectedSlot && (
-                      <SlotPicker
-                        days={availableDays}
+                      <EnhancedSlotPicker
+                        doctorId={doctor.id}
                         onSelectSlot={handleSlotSelect}
                       />
                     )}

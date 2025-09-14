@@ -1,5 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import { ArrowRight, Stethoscope } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +14,7 @@ import { MedicalLampHero } from "@/components/medical-lamp-hero";
 import { creditBenefits, features, testimonials } from "@/lib/data";
 
 export default function Home() {
+
   return (
     <div className="w-full overflow-x-hidden bg-background">
       {/* Hero Section with Lamp Effect */}

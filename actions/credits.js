@@ -30,31 +30,28 @@ export async function checkAndAllocateCredits(user) {
       return user;
     }
 
-    // Check if user has a subscription
-    const { has } = await auth();
+    // Get current user from Clerk to check metadata
+    const { userId } = await auth();
+    if (!userId) return user;
 
-    // Check which plan the user has
-    const hasBasic = has({ plan: "free_user" });
-    const hasStandard = has({ plan: "standard" });
-    const hasPremium = has({ plan: "premium" });
+    const clerkClient = await import("@clerk/nextjs/server").then(m => m.clerkClient);
+    const clerkUser = await clerkClient.users.getUser(userId);
+    const currentPlan = clerkUser.publicMetadata?.plan || "free_user";
 
-    let currentPlan = null;
     let creditsToAllocate = 0;
 
-    if (hasPremium) {
-      currentPlan = "premium";
-      creditsToAllocate = PLAN_CREDITS.premium;
-    } else if (hasStandard) {
-      currentPlan = "standard";
-      creditsToAllocate = PLAN_CREDITS.standard;
-    } else if (hasBasic) {
-      currentPlan = "free_user";
-      creditsToAllocate = PLAN_CREDITS.free_user;
-    }
-
-    // If user doesn't have any plan, just return the user
-    if (!currentPlan) {
-      return user;
+    // Define credit allocations per plan
+    switch (currentPlan) {
+      case "premium":
+        creditsToAllocate = PLAN_CREDITS.premium;
+        break;
+      case "standard":
+        creditsToAllocate = PLAN_CREDITS.standard;
+        break;
+      case "free_user":
+      default:
+        creditsToAllocate = PLAN_CREDITS.free_user;
+        break;
     }
 
     // Check if we already allocated credits for this month
@@ -78,6 +75,11 @@ export async function checkAndAllocateCredits(user) {
       }
     }
 
+    // Only allocate credits if plan provides credits (free_user gets 0 monthly credits)
+    if (creditsToAllocate === 0) {
+      return user;
+    }
+
     // Allocate credits and create transaction record
     const updatedUser = await db.$transaction(async (tx) => {
       // Create transaction record
@@ -87,6 +89,7 @@ export async function checkAndAllocateCredits(user) {
           amount: creditsToAllocate,
           type: "CREDIT_PURCHASE",
           packageId: currentPlan,
+          description: `Monthly ${currentPlan} plan credits`,
         },
       });
 
@@ -115,7 +118,7 @@ export async function checkAndAllocateCredits(user) {
       "Failed to check subscription and allocate credits:",
       error.message
     );
-    return null;
+    return user; // Return original user if allocation fails
   }
 }
 

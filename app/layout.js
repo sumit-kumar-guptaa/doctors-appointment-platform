@@ -24,7 +24,7 @@ export default function RootLayout({ children }) {
       <html lang="en" suppressHydrationWarning>
         <head>
           <link rel="icon" href="/logo.png" sizes="any" />
-          <title>MediMeet - Doctors Appointment Platform</title>
+          <title>AARAGYA - Doctors Appointment Platform</title>
           <meta name="description" content="Connect with doctors anytime, anywhere" />
         </head>
         <body className={`${inter.className} overflow-x-hidden`}>

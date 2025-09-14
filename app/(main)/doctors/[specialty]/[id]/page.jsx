@@ -6,11 +6,17 @@ export default async function DoctorProfilePage({ params }) {
   const { id } = await params;
 
   try {
-    // Fetch doctor data and available slots in parallel
-    const [doctorData, slotsData] = await Promise.all([
-      getDoctorById(id),
-      getAvailableTimeSlots(id),
-    ]);
+    // Fetch doctor data first
+    const doctorData = await getDoctorById(id);
+    
+    // Try to fetch available slots, but don't fail if there are none
+    let slotsData = { days: [] };
+    try {
+      slotsData = await getAvailableTimeSlots(id);
+    } catch (slotsError) {
+      console.log("No availability set for doctor:", id);
+      // Continue with empty slots - this is not a critical error
+    }
 
     return (
       <DoctorProfile

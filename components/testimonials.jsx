@@ -46,7 +46,7 @@ export function PatientTestimonials() {
           </h2>
           
           <p className="text-lg md:text-xl text-muted-foreground max-w-4xl mx-auto mb-8">
-            Discover how MediMeet transforms healthcare experiences through real stories from our community of patients and medical professionals
+            Discover how AARAGYA transforms healthcare experiences through real stories from our community of patients and medical professionals
           </p>
 
           {/* Category Filter */}
@@ -135,7 +135,7 @@ export function PatientTestimonials() {
 
 const medicalTestimonials = [
   {
-    quote: "MediMeet transformed how I deliver patient care. The platform's intuitive design and secure video calls allow me to provide quality consultations remotely. My patient satisfaction rates have increased by 40%.",
+    quote: "AARAGYA transformed how I deliver patient care. The platform's intuitive design and secure video calls allow me to provide quality consultations remotely. My patient satisfaction rates have increased by 40%.",
     name: "Dr. Sarah Mitchell",
     title: "Cardiologist • Johns Hopkins Hospital",
     type: "doctor",
@@ -143,7 +143,7 @@ const medicalTestimonials = [
     specialty: "Cardiology"
   },
   {
-    quote: "As a working mother, finding time for medical appointments was always challenging. MediMeet's flexible scheduling and video consultations have been a game-changer for my family's healthcare needs.",
+    quote: "As a working mother, finding time for medical appointments was always challenging. AARAGYA's flexible scheduling and video consultations have been a game-changer for my family's healthcare needs.",
     name: "Emily Rodriguez",
     title: "Patient • Software Engineer & Mother of 2",
     type: "patient",
@@ -151,7 +151,7 @@ const medicalTestimonials = [
     condition: "Family Medicine"
   },
   {
-    quote: "The telemedicine capabilities on MediMeet allow me to reach patients in rural areas who previously had limited access to specialized care. It's revolutionizing healthcare accessibility.",
+    quote: "The telemedicine capabilities on AARAGYA allow me to reach patients in rural areas who previously had limited access to specialized care. It's revolutionizing healthcare accessibility.",
     name: "Dr. Michael Chen",
     title: "Neurologist • Mayo Clinic",
     type: "doctor",
@@ -159,7 +159,7 @@ const medicalTestimonials = [
     specialty: "Neurology"
   },
   {
-    quote: "I was skeptical about online consultations, but my dermatologist on MediMeet was incredibly thorough. The high-quality video and secure file sharing made the diagnosis process seamless.",
+    quote: "I was skeptical about online consultations, but my dermatologist on AARAGYA was incredibly thorough. The high-quality video and secure file sharing made the diagnosis process seamless.",
     name: "James Thompson",
     title: "Patient • Marketing Director",
     type: "patient",
@@ -167,7 +167,7 @@ const medicalTestimonials = [
     condition: "Dermatology"
   },
   {
-    quote: "MediMeet's comprehensive platform manages everything from appointment scheduling to prescription delivery. It's streamlined my practice and improved patient outcomes significantly.",
+    quote: "AARAGYA's comprehensive platform manages everything from appointment scheduling to prescription delivery. It's streamlined my practice and improved patient outcomes significantly.",
     name: "Dr. Rachel Park",
     title: "Family Medicine • Stanford Health",
     type: "doctor",
@@ -175,7 +175,7 @@ const medicalTestimonials = [
     specialty: "Family Medicine"
   },
   {
-    quote: "The mental health support I received through MediMeet was exceptional. The secure, private environment and qualified psychiatrists helped me through a difficult period in my life.",
+    quote: "The mental health support I received through AARAGYA was exceptional. The secure, private environment and qualified psychiatrists helped me through a difficult period in my life.",
     name: "Maria Santos",
     title: "Patient • Teacher",
     type: "patient",
@@ -183,7 +183,7 @@ const medicalTestimonials = [
     condition: "Mental Health"
   },
   {
-    quote: "Being able to conduct follow-up appointments virtually has improved my patients' adherence to treatment plans. MediMeet's integrated health records make continuity of care effortless.",
+    quote: "Being able to conduct follow-up appointments virtually has improved my patients' adherence to treatment plans. AARAGYA's integrated health records make continuity of care effortless.",
     name: "Dr. David Wilson",
     title: "Orthopedic Surgeon • Cleveland Clinic",
     type: "doctor",
@@ -191,7 +191,7 @@ const medicalTestimonials = [
     specialty: "Orthopedics"
   },
   {
-    quote: "Living in a small town, access to specialists was always an issue. MediMeet connected me with a top endocrinologist who has been managing my diabetes excellently through virtual visits.",
+    quote: "Living in a small town, access to specialists was always an issue. AARAGYA connected me with a top endocrinologist who has been managing my diabetes excellently through virtual visits.",
     name: "Robert Johnson",
     title: "Patient • Retired Teacher",
     type: "patient",
@@ -199,7 +199,7 @@ const medicalTestimonials = [
     condition: "Endocrinology"
   },
   {
-    quote: "The platform's security features and HIPAA compliance give me confidence in discussing sensitive patient information. MediMeet has become an essential tool in my psychiatric practice.",
+    quote: "The platform's security features and HIPAA compliance give me confidence in discussing sensitive patient information. AARAGYA has become an essential tool in my psychiatric practice.",
     name: "Dr. Lisa Wang",
     title: "Psychiatrist • UCSF Health",
     type: "doctor",
@@ -207,7 +207,7 @@ const medicalTestimonials = [
     specialty: "Psychiatry"
   },
   {
-    quote: "As a college student, MediMeet's affordable credit system and flexible scheduling fit perfectly with my busy academic life. I've had excellent experiences with multiple specialists.",
+    quote: "As a college student, AARAGYA's affordable credit system and flexible scheduling fit perfectly with my busy academic life. I've had excellent experiences with multiple specialists.",
     name: "Alex Kumar",
     title: "Patient • Medical Student",
     type: "patient",

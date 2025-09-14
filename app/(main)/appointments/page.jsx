@@ -1,6 +1,7 @@
 import { getPatientAppointments } from "@/actions/patient";
 import { AppointmentCard } from "@/components/appointment-card";
 import { PageHeader } from "@/components/page-header";
+import PatientEmergencyDashboard from "@/components/patient-emergency-dashboard";
 import { Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { redirect } from "next/navigation";
@@ -23,6 +24,9 @@ export default async function PatientAppointmentsPage() {
         backLink="/doctors"
         backLabel="Find Doctors"
       />
+
+      {/* Emergency Dashboard - Only for patients */}
+      <PatientEmergencyDashboard user={user} />
 
       <Card className="border-emerald-900/20">
         <CardHeader>

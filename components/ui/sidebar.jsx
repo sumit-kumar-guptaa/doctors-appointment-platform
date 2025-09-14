@@ -137,17 +137,17 @@ export const SidebarLink = ({
   ...props
 }) => {
   const { open, animate } = useSidebar();
-  return (
-    <Link
-      href={link.href}
-      className={cn(
-        "flex items-center justify-start gap-2 group/sidebar py-2",
-        className
-      )}
-      {...props}
-    >
+  
+  const handleClick = (e) => {
+    if (link.onClick) {
+      e.preventDefault();
+      link.onClick();
+    }
+  };
+  
+  const linkContent = (
+    <>
       {link.icon}
-
       <motion.span
         animate={{
           display: animate ? (open ? "inline-block" : "none") : "inline-block",
@@ -157,6 +157,36 @@ export const SidebarLink = ({
       >
         {link.label}
       </motion.span>
+    </>
+  );
+
+  if (link.onClick) {
+    return (
+      <button
+        onClick={handleClick}
+        className={cn(
+          "flex items-center justify-start gap-2 group/sidebar py-2 w-full text-left",
+          link.className,
+          className
+        )}
+        {...props}
+      >
+        {linkContent}
+      </button>
+    );
+  }
+
+  return (
+    <Link
+      href={link.href}
+      className={cn(
+        "flex items-center justify-start gap-2 group/sidebar py-2",
+        link.className,
+        className
+      )}
+      {...props}
+    >
+      {linkContent}
     </Link>
   );
 };

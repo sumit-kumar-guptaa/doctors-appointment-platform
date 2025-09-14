@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { getDoctorsBySpecialty } from "@/actions/doctors-listing";
 import { DoctorCard } from "../components/doctor-card";
 import { PageHeader } from "@/components/page-header";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 
 export default async function DoctorSpecialtyPage({ params }) {
   const { specialty } = await params;
@@ -26,6 +28,16 @@ export default async function DoctorSpecialtyPage({ params }) {
         backLabel="All Specialties"
       />
 
+      {error && (
+        <Alert className="border-yellow-500/50 bg-yellow-900/20">
+          <AlertTriangle className="h-4 w-4 text-yellow-500" />
+          <AlertDescription className="text-yellow-200">
+            We're experiencing connection issues. Showing sample doctors for demonstration.
+            Please try refreshing the page.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {doctors && doctors.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {doctors.map((doctor) => (
@@ -38,8 +50,10 @@ export default async function DoctorSpecialtyPage({ params }) {
             No doctors available
           </h3>
           <p className="text-muted-foreground">
-            There are currently no verified doctors in this specialty. Please
-            check back later or choose another specialty.
+            {error 
+              ? "We're having trouble connecting to our database. Please try again later."
+              : "There are currently no verified doctors in this specialty. Please check back later or choose another specialty."
+            }
           </p>
         </div>
       )}

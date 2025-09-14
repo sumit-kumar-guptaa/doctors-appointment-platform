@@ -39,9 +39,10 @@ export async function getPatientAppointments() {
             imageUrl: true,
           },
         },
+        availability: true,
       },
       orderBy: {
-        startTime: "asc",
+        createdAt: "asc",
       },
     });
 

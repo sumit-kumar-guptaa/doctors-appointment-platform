@@ -31,7 +31,7 @@ export function InteractiveFooter() {
   };
 
   return (
-    <footer className="bg-gradient-to-br from-purple-950 via-slate-900 to-orange-950 text-white">
+    <footer className="bg-gradient-to-br from-blue-950 via-slate-900 to-teal-950 text-white">
       <div className="container mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           
@@ -39,13 +39,13 @@ export function InteractiveFooter() {
           <div className="space-y-4">
             <Link href="/" className="flex items-center space-x-2">
               <Image
-                src="/logo-single.png"
-                alt="MediMeet Logo"
+                src="/logo.png"
+                alt="AARAGYA Logo"
                 width={40}
                 height={40}
                 className="h-10 w-10 rounded-lg"
               />
-              <span className="text-xl font-bold gradient-title">MediMeet</span>
+              <span className="text-xl font-bold gradient-title">AARAGYA</span>
             </Link>
             <p className="text-gray-300 text-sm leading-relaxed">
               Connecting patients with healthcare professionals through secure, convenient online consultations. 
@@ -55,7 +55,7 @@ export function InteractiveFooter() {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="p-2 hover:bg-purple-800/30 hover:text-orange-400 transition-colors"
+                className="p-2 hover:bg-blue-800/30 hover:text-teal-400 transition-colors"
                 asChild
               >
                 <a href="#" aria-label="Facebook">
@@ -65,7 +65,7 @@ export function InteractiveFooter() {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="p-2 hover:bg-purple-800/30 hover:text-orange-400 transition-colors"
+                className="p-2 hover:bg-blue-800/30 hover:text-teal-400 transition-colors"
                 asChild
               >
                 <a href="#" aria-label="Twitter">
@@ -75,7 +75,7 @@ export function InteractiveFooter() {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="p-2 hover:bg-purple-800/30 hover:text-orange-400 transition-colors"
+                className="p-2 hover:bg-blue-800/30 hover:text-teal-400 transition-colors"
                 asChild
               >
                 <a href="#" aria-label="LinkedIn">
@@ -85,7 +85,7 @@ export function InteractiveFooter() {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="p-2 hover:bg-purple-800/30 hover:text-orange-400 transition-colors"
+                className="p-2 hover:bg-blue-800/30 hover:text-teal-400 transition-colors"
                 asChild
               >
                 <a href="#" aria-label="Instagram">
@@ -97,28 +97,28 @@ export function InteractiveFooter() {
 
           {/* Quick Links */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-orange-400">Quick Links</h3>
+            <h3 className="text-lg font-semibold text-teal-400">Quick Links</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/doctors" className="flex items-center space-x-2 text-gray-300 hover:text-orange-400 transition-colors">
+                <Link href="/doctors" className="flex items-center space-x-2 text-gray-300 hover:text-teal-400 transition-colors">
                   <IconStethoscope size={16} />
                   <span>Find Doctors</span>
                 </Link>
               </li>
               <li>
-                <Link href="/appointments" className="flex items-center space-x-2 text-gray-300 hover:text-orange-400 transition-colors">
+                <Link href="/appointments" className="flex items-center space-x-2 text-gray-300 hover:text-teal-400 transition-colors">
                   <IconCalendar size={16} />
                   <span>Book Appointment</span>
                 </Link>
               </li>
               <li>
-                <Link href="/pricing" className="flex items-center space-x-2 text-gray-300 hover:text-orange-400 transition-colors">
+                <Link href="/pricing" className="flex items-center space-x-2 text-gray-300 hover:text-teal-400 transition-colors">
                   <IconUsers size={16} />
                   <span>Pricing Plans</span>
                 </Link>
               </li>
               <li>
-                <Link href="/doctor/verification" className="flex items-center space-x-2 text-gray-300 hover:text-orange-400 transition-colors">
+                <Link href="/doctor/verification" className="flex items-center space-x-2 text-gray-300 hover:text-teal-400 transition-colors">
                   <IconShield size={16} />
                   <span>Doctor Verification</span>
                 </Link>
@@ -128,25 +128,25 @@ export function InteractiveFooter() {
 
           {/* Support */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-orange-400">Support</h3>
+            <h3 className="text-lg font-semibold text-teal-400">Support</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">
+                <a href="#" className="text-gray-300 hover:text-teal-400 transition-colors">
                   Help Center
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">
+                <a href="#" className="text-gray-300 hover:text-teal-400 transition-colors">
                   Privacy Policy
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">
+                <a href="#" className="text-gray-300 hover:text-teal-400 transition-colors">
                   Terms of Service
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">
+                <a href="#" className="text-gray-300 hover:text-teal-400 transition-colors">
                   Contact Us
                 </a>
               </li>
@@ -155,7 +155,7 @@ export function InteractiveFooter() {
 
           {/* Newsletter */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-orange-400">Stay Updated</h3>
+            <h3 className="text-lg font-semibold text-teal-400">Stay Updated</h3>
             <p className="text-gray-300 text-sm">
               Subscribe to our newsletter for health tips and updates.
             </p>
@@ -165,11 +165,11 @@ export function InteractiveFooter() {
                 name="email"
                 placeholder="Enter your email"
                 required
-                className="bg-slate-800/50 border-slate-600 text-white placeholder:text-gray-400 focus:border-orange-400"
+                className="bg-slate-800/50 border-slate-600 text-white placeholder:text-gray-400 focus:border-teal-400"
               />
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-purple-600 to-orange-600 hover:from-purple-700 hover:to-orange-700 text-white"
+                className="w-full bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white"
               >
                 Subscribe
               </Button>
@@ -181,15 +181,15 @@ export function InteractiveFooter() {
         <div className="border-t border-slate-700 mt-12 pt-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-300">
             <div className="flex items-center space-x-2">
-              <IconMail size={16} className="text-orange-400" />
-              <span>contact@medimeet.com</span>
+              <IconMail size={16} className="text-teal-400" />
+              <span>contact@AARAGYA.com</span>
             </div>
             <div className="flex items-center space-x-2">
-              <IconPhone size={16} className="text-orange-400" />
+              <IconPhone size={16} className="text-teal-400" />
               <span>+1 (555) 123-4567</span>
             </div>
             <div className="flex items-center space-x-2">
-              <IconMapPin size={16} className="text-orange-400" />
+              <IconMapPin size={16} className="text-teal-400" />
               <span>123 Healthcare Ave, Medical City</span>
             </div>
           </div>
@@ -197,15 +197,15 @@ export function InteractiveFooter() {
 
         {/* Bottom Bar */}
         <div className="border-t border-slate-700 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-400">
-          <p>© 2024 MediMeet. All rights reserved.</p>
+          <p>© 2024 AARAGYA. All rights reserved.</p>
           <div className="flex space-x-6 mt-4 md:mt-0">
-            <a href="#" className="hover:text-orange-400 transition-colors">
+            <a href="#" className="hover:text-teal-400 transition-colors">
               Accessibility
             </a>
-            <a href="#" className="hover:text-orange-400 transition-colors">
+            <a href="#" className="hover:text-teal-400 transition-colors">
               Security
             </a>
-            <a href="#" className="hover:text-orange-400 transition-colors">
+            <a href="#" className="hover:text-teal-400 transition-colors">
               HIPAA Compliance
             </a>
           </div>

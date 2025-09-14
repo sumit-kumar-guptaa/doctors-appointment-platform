@@ -26,7 +26,7 @@ export function HowItWorks() {
           
           <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
             Experience healthcare reimagined through cutting-edge technology, personalized care, and seamless digital experiences. 
-            From AI-powered diagnostics to comprehensive health management - discover how we're transforming healthcare delivery.
+            From 24/7 emergency medical services to AI-powered medical report diagnosis - discover how we're transforming healthcare delivery.
           </p>
         </div>
 
@@ -42,22 +42,22 @@ export function HowItWorks() {
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 text-center">
               <div className="space-y-3 p-4 rounded-lg bg-white/10 dark:bg-black/10">
-                <div className="text-2xl sm:text-3xl">�️</div>
-                <h4 className="font-semibold text-sm sm:text-base">Enterprise Security</h4>
-                <p className="text-xs sm:text-sm text-muted-foreground">Military-grade encryption with SOC 2 Type II compliance</p>
-              </div>
-              <div className="space-y-3 p-4 rounded-lg bg-white/10 dark:bg-black/10">
-                <div className="text-2xl sm:text-3xl">🚀</div>
-                <h4 className="font-semibold text-sm sm:text-base">Lightning Fast</h4>
-                <p className="text-xs sm:text-sm text-muted-foreground">Connect with specialists in under 60 seconds</p>
+                <div className="text-2xl sm:text-3xl">🚨</div>
+                <h4 className="font-semibold text-sm sm:text-base">Emergency Services</h4>
+                <p className="text-xs sm:text-sm text-muted-foreground">Instant connection to emergency doctors for critical situations</p>
               </div>
               <div className="space-y-3 p-4 rounded-lg bg-white/10 dark:bg-black/10">
                 <div className="text-2xl sm:text-3xl">🧠</div>
-                <h4 className="font-semibold text-sm sm:text-base">AI-Powered</h4>
+                <h4 className="font-semibold text-sm sm:text-base">AI Medical Diagnosis</h4>
+                <p className="text-xs sm:text-sm text-muted-foreground">Upload medical reports for AI-powered analysis and disease detection</p>
+              </div>
+              <div className="space-y-3 p-4 rounded-lg bg-white/10 dark:bg-black/10">
+                <div className="text-2xl sm:text-3xl">💎</div>
+                <h4 className="font-semibold text-sm sm:text-base">AI-Powered Care</h4>
                 <p className="text-xs sm:text-sm text-muted-foreground">Machine learning for personalized care recommendations</p>
               </div>
               <div className="space-y-3 p-4 rounded-lg bg-white/10 dark:bg-black/10">
-                <div className="text-2xl sm:text-3xl">�</div>
+                <div className="text-2xl sm:text-3xl">⏰</div>
                 <h4 className="font-semibold text-sm sm:text-base">24/7 Excellence</h4>
                 <p className="text-xs sm:text-sm text-muted-foreground">Round-the-clock access to premium healthcare</p>
               </div>
@@ -104,7 +104,7 @@ export const howItWorksSteps = [
     title: "AI-Powered Doctor Matching",
     description: "Our advanced matching algorithm connects you with the most suitable specialists based on your health profile, location preferences, insurance coverage, and patient reviews. No more guessing - find your perfect healthcare match.",
     link: "/doctors",
-    icon: "�",
+    icon: "🔬",
     step: "Step 2",
     category: "Discovery"
   },
@@ -120,7 +120,7 @@ export const howItWorksSteps = [
     title: "Next-Gen Telemedicine",
     description: "Experience healthcare reimagined with our cutting-edge consultation platform featuring HD video, real-time health data sharing, digital prescriptions, and instant lab result discussions - all HIPAA compliant.",
     link: "/video-call",
-    icon: "�",
+    icon: "📹",
     step: "Step 4",
     category: "Consultation"
   },
@@ -128,7 +128,7 @@ export const howItWorksSteps = [
     title: "Comprehensive Health Hub",
     description: "Access your complete digital health ecosystem - consultation history, prescription tracking, lab results, health insights, doctor recommendations, and personalized wellness plans all in one secure portal.",
     link: "/medical-history",
-    icon: "�",
+    icon: "📊",
     step: "Step 5",
     category: "Management"
   },
@@ -136,7 +136,7 @@ export const howItWorksSteps = [
     title: "Continuous Care Excellence",
     description: "Enjoy ongoing health support with automated follow-up reminders, health trend analysis, medication adherence tracking, and seamless care coordination between your healthcare team.",
     link: "/dashboard",
-    icon: "�",
+    icon: "💎",
     step: "Step 6",
     category: "Ongoing Care"
   },

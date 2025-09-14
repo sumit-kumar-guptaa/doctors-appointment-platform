@@ -3,10 +3,11 @@ import { getDoctorAppointments, getDoctorAvailability } from "@/actions/doctor";
 import { AvailabilitySettings } from "./_components/availability-settings";
 import { getCurrentUser } from "@/actions/onboarding";
 import { redirect } from "next/navigation";
-import { Calendar, Clock, DollarSign } from "lucide-react";
+import { Calendar, Clock, DollarSign, AlertTriangle } from "lucide-react";
 import DoctorAppointmentsList from "./_components/appointments-list";
 import { getDoctorEarnings, getDoctorPayouts } from "@/actions/payout";
 import { DoctorEarnings } from "./_components/doctor-earnings";
+import DoctorEmergencyDashboard from "@/components/doctor-emergency-dashboard";
 
 export default async function DoctorDashboardPage() {
   const user = await getCurrentUser();
@@ -31,10 +32,17 @@ export default async function DoctorDashboardPage() {
 
   return (
     <Tabs
-      defaultValue="earnings"
+      defaultValue="emergency"
       className="grid grid-cols-1 md:grid-cols-4 gap-6"
     >
-      <TabsList className="md:col-span-1 bg-muted/30 border h-14 md:h-40 flex sm:flex-row md:flex-col w-full p-2 md:p-1 rounded-md md:space-y-2 sm:space-x-2 md:space-x-0">
+      <TabsList className="md:col-span-1 bg-muted/30 border h-14 md:h-48 flex sm:flex-row md:flex-col w-full p-2 md:p-1 rounded-md md:space-y-2 sm:space-x-2 md:space-x-0">
+        <TabsTrigger
+          value="emergency"
+          className="flex-1 md:flex md:items-center md:justify-start md:px-4 md:py-3 w-full"
+        >
+          <AlertTriangle className="h-4 w-4 mr-2 hidden md:inline text-red-400" />
+          <span>Emergency</span>
+        </TabsTrigger>
         <TabsTrigger
           value="earnings"
           className="flex-1 md:flex md:items-center md:justify-start md:px-4 md:py-3 w-full"
@@ -58,6 +66,9 @@ export default async function DoctorDashboardPage() {
         </TabsTrigger>
       </TabsList>
       <div className="md:col-span-3">
+        <TabsContent value="emergency" className="border-none p-0">
+          <DoctorEmergencyDashboard user={user} />
+        </TabsContent>
         <TabsContent value="appointments" className="border-none p-0">
           <DoctorAppointmentsList
             appointments={appointmentsData.appointments || []}

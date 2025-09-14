@@ -12,6 +12,7 @@ import {
   IconUsers,
   IconShield,
   IconClipboardList,
+  IconAlertTriangle,
 } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -19,10 +20,12 @@ import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { UserButton } from "@clerk/nextjs";
 import Image from "next/image";
+import { MedicalHistorySidebar } from "./medical-history-sidebar";
 
 export function DoctorsSidebar({ children }) {
   const { user } = useUser();
   const [open, setOpen] = useState(false);
+  const [medicalHistoryOpen, setMedicalHistoryOpen] = useState(false);
 
   // Define links based on user role (you can pass this as props or get from context)
   const getLinksForRole = (role) => {
@@ -31,8 +34,16 @@ export function DoctorsSidebar({ children }) {
         label: "Dashboard",
         href: "/",
         icon: (
-          <IconDashboard className="h-5 w-5 shrink-0 text-purple-600 dark:text-orange-400" />
+          <IconDashboard className="h-5 w-5 shrink-0 text-blue-600 dark:text-teal-400" />
         ),
+      },
+      {
+        label: "🚨 Emergency",
+        href: "/emergency",
+        icon: (
+          <IconAlertTriangle className="h-5 w-5 shrink-0 text-red-500 dark:text-red-400 animate-pulse" />
+        ),
+        className: "bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-r-md px-3 py-2 my-1",
       },
     ];
 
@@ -43,21 +54,22 @@ export function DoctorsSidebar({ children }) {
           label: "Find Doctors",
           href: "/doctors",
           icon: (
-            <IconStethoscope className="h-5 w-5 shrink-0 text-purple-600 dark:text-orange-400" />
+            <IconStethoscope className="h-5 w-5 shrink-0 text-blue-600 dark:text-teal-400" />
           ),
         },
         {
           label: "My Appointments",
           href: "/appointments",
           icon: (
-            <IconCalendar className="h-5 w-5 shrink-0 text-purple-600 dark:text-orange-400" />
+            <IconCalendar className="h-5 w-5 shrink-0 text-blue-600 dark:text-teal-400" />
           ),
         },
         {
           label: "Medical History",
-          href: "/medical-history",
+          href: "#",
+          onClick: () => setMedicalHistoryOpen(true),
           icon: (
-            <IconClipboardList className="h-5 w-5 shrink-0 text-purple-600 dark:text-orange-400" />
+            <IconClipboardList className="h-5 w-5 shrink-0 text-blue-600 dark:text-teal-400" />
           ),
         },
         {
@@ -189,6 +201,12 @@ export function DoctorsSidebar({ children }) {
           </div>
         </div>
       </div>
+      
+      {/* Medical History Sliding Window */}
+      <MedicalHistorySidebar 
+        isOpen={medicalHistoryOpen} 
+        onClose={() => setMedicalHistoryOpen(false)} 
+      />
     </SidebarProvider>
   );
 }
@@ -200,8 +218,8 @@ export const Logo = () => {
       className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-foreground"
     >
       <Image
-        src="/logo-single.png"
-        alt="MediMeet Logo"
+        src="/logo.png"
+        alt="AARAGYA Logo"
         width={32}
         height={32}
         className="h-8 w-8 shrink-0 rounded-lg"
@@ -211,7 +229,7 @@ export const Logo = () => {
         animate={{ opacity: 1 }}
         className="font-bold whitespace-pre text-xl gradient-title"
       >
-        MediMeet
+        AARAGYA
       </motion.span>
     </Link>
   );
@@ -224,8 +242,8 @@ export const LogoIcon = () => {
       className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-foreground"
     >
       <Image
-        src="/logo-single.png"
-        alt="MediMeet Logo"
+        src="/logo.png"
+        alt="AARAGYA Logo"
         width={32}
         height={32}
         className="h-8 w-8 shrink-0 rounded-lg"

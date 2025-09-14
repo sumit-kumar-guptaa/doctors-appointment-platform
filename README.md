@@ -1,10 +1,10 @@
-# 🏥 MediMeet - Revolutionary Healthcare Platform
+# 🏥 AARAGYA - Revolutionary Healthcare Platform
 
-![MediMeet Banner](./public/banner.png)
+![AARAGYA Banner](./public/banner.png)
 
 > **The Future of Healthcare, Delivered Today**
 
-MediMeet is a cutting-edge healthcare platform that revolutionizes how patients connect with medical professionals through AI-powered matching, seamless telemedicine, and comprehensive health management.
+AARAGYA is a cutting-edge healthcare platform that revolutionizes how patients connect with medical professionals through AI-powered matching, seamless telemedicine, and comprehensive health management.
 
 [![Next.js](https://img.shields.io/badge/Next.js-15.3.2-black?logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-18+-blue?logo=react)](https://reactjs.org/)
@@ -347,9 +347,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 For support and questions:
-- 📧 Email: support@medimeet.com
-- 💬 Discord: [Join our community](https://discord.gg/medimeet)
-- 📚 Documentation: [docs.medimeet.com](https://docs.medimeet.com)
+- 📧 Email: support@AARAGYA.com
+- 💬 Discord: [Join our community](https://discord.gg/AARAGYA)
+- 📚 Documentation: [docs.AARAGYA.com](https://docs.AARAGYA.com)
 
 ---
 

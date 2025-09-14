@@ -25,8 +25,8 @@ export default async function Header() {
       <nav className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 cursor-pointer">
           <Image
-            src="/logo-single.png"
-            alt="Medimeet Logo"
+            src="/logo.png"
+            alt="AARAGYA Logo"
             width={200}
             height={60}
             className="h-10 w-auto object-contain"
@@ -105,10 +105,10 @@ export default async function Header() {
             <Link href={user?.role === "PATIENT" ? "/pricing" : "/doctor"}>
               <Badge
                 variant="outline"
-                className="h-9 bg-purple-900/20 border-purple-700/30 px-3 py-1 flex items-center gap-2"
+                className="h-9 bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800 px-3 py-1 flex items-center gap-2"
               >
-                <CreditCard className="h-3.5 w-3.5 text-orange-400" />
-                <span className="text-orange-400">
+                <CreditCard className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                <span className="text-blue-600 dark:text-blue-400">
                   {user && user.role !== "ADMIN" ? (
                     <>
                       {user.credits}{" "}
