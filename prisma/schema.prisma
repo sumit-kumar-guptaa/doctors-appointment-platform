@@ -7,199 +7,135 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model healthcare_providers {
-  id               String    @id
-  licenseNumber    String    @unique
-  specialty        String
-  verified         Boolean   @default(false)
-  organization     String
-  email            String    @unique
-  phoneNumber      String
-  address          String?
-  verificationDate DateTime?
-  verifiedBy       String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime
+model User {
+  id                   String              @id @default(cuid())
+  clerkUserId          String              @unique
+  email                String              @unique
+  name                 String?
+  imageUrl             String?
+  role                 UserRole            @default(UNASSIGNED)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  credits              Int                 @default(0)
+  specialty            String?
+  experience           Int?
+  credentialUrl        String?
+  description          String?
+  verificationStatus   VerificationStatus? @default(PENDING)
+
+  // Relations
+  doctorAvailabilities Availability[]      @relation("DoctorAvailability")
+  doctorAppointments   Appointment[]       @relation("DoctorAppointments")
+  patientAppointments  Appointment[]       @relation("PatientAppointments")
+  transactions         CreditTransaction[]
+  payouts              Payout[]
 }
 
-model medical_consultations {
-  id                  String             @id
-  sessionId           String             @unique
-  patientAge          Int?
-  patientGender       String?
-  symptoms            String[]
-  medicalHistory      String[]
-  query               String
-  aiResponse          String
-  urgencyLevel        UrgencyLevel       @default(LOW)
-  diagnosisConfidence Float?
-  recommendedActions  String[]
-  emergencyFlags      Boolean            @default(false)
-  userId              String?
-  createdAt           DateTime           @default(now())
-  updatedAt           DateTime
-  completedAt         DateTime?
-  doctorId            String?
-  status              ConsultationStatus @default(PENDING)
-  type                ConsultationType   @default(CHAT)
-  videoArchiveId      String?
-  videoSessionId      String?
-  users               users?             @relation(fields: [userId], references: [id])
+model Availability {
+  id        String     @id @default(cuid())
+  doctorId  String
+  startTime DateTime
+  endTime   DateTime
+  status    SlotStatus @default(AVAILABLE)
+
+  // Relations
+  doctor      User         @relation("DoctorAvailability", fields: [doctorId], references: [id], onDelete: Cascade)
+  appointment Appointment?
+
+  @@index([doctorId, startTime])
 }
 
-model notifications {
-  id        String           @id
-  type      NotificationType
-  title     String
-  message   String
-  read      Boolean          @default(false)
-  userId    String
-  createdAt DateTime         @default(now())
-  users     users            @relation(fields: [userId], references: [id], onDelete: Cascade)
+model Appointment {
+  id                   String            @id @default(cuid())
+  patientId            String
+  doctorId             String
+  availabilityId       String?           @unique
+  status               AppointmentStatus @default(SCHEDULED)
+  notes                String?
+  patientDescription   String?
+  videoSessionId       String?
+  videoSessionToken    String?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  // Relations
+  patient      User          @relation("PatientAppointments", fields: [patientId], references: [id], onDelete: Restrict)
+  doctor       User          @relation("DoctorAppointments", fields: [doctorId], references: [id], onDelete: Restrict)
+  availability Availability? @relation(fields: [availabilityId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
 }
 
-model patents {
-  id                  String         @id
-  title               String
-  description         String
-  abstract            String?
-  category            PatentCategory
-  status              PatentStatus   @default(DRAFT)
-  patentNumber        String?        @unique
-  applicationDate     DateTime?
-  publicationDate     DateTime?
-  expiryDate          DateTime?
-  aiScore             Float?
-  marketPotential     String?
-  technicalComplexity String?
-  documents           String[]
-  images              String[]
-  userId              String
-  createdAt           DateTime       @default(now())
-  updatedAt           DateTime
-  users               users          @relation(fields: [userId], references: [id], onDelete: Cascade)
+model CreditTransaction {
+  id          String          @id @default(cuid())
+  userId      String
+  amount      Int
+  type        TransactionType
+  packageId   String?
+  description String
+  createdAt   DateTime        @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model subscriptions {
-  id                 String             @id
-  planType           SubscriptionPlan
-  status             SubscriptionStatus @default(ACTIVE)
-  currentPeriodStart DateTime
-  currentPeriodEnd   DateTime
-  cancelAtPeriodEnd  Boolean            @default(false)
-  maxPatents         Int
-  maxConsultations   Int
-  aiAnalysisEnabled  Boolean            @default(false)
-  prioritySupport    Boolean            @default(false)
-  userId             String
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime
-  users              users              @relation(fields: [userId], references: [id], onDelete: Cascade)
+model CreditPackage {
+  id          String  @id @default(cuid())
+  name        String
+  description String
+  credits     Int
+  price       Float
+  active      Boolean @default(true)
 }
 
-model system_analytics {
-  id                  String   @id
-  totalUsers          Int
-  totalPatents        Int
-  totalConsultations  Int
-  activeUsers         Int
-  aiAccuracy          Float?
-  avgResponseTime     Float?
-  emergencyDetections Int?
-  serverUptime        Float?
-  errorRate           Float?
-  recordedAt          DateTime @default(now())
+model Payout {
+  id          String      @id @default(cuid())
+  doctorId    String
+  amount      Float
+  status      PayoutStatus @default(PENDING)
+  stripePayoutId String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  doctor User @relation(fields: [doctorId], references: [id], onDelete: Cascade)
 }
 
-model users {
-  id                    String                  @id
-  clerkId               String                  @unique
-  email                 String                  @unique
-  firstName             String?
-  lastName              String?
-  imageUrl              String?
-  role                  UserRole                @default(USER)
-  organization          String?
-  jobTitle              String?
-  phoneNumber           String?
-  country               String?
-  createdAt             DateTime                @default(now())
-  updatedAt             DateTime
-  medical_consultations medical_consultations[]
-  notifications         notifications[]
-  patents               patents[]
-  subscriptions         subscriptions[]
-}
-
+// Enums
 enum UserRole {
-  USER
+  UNASSIGNED
+  PATIENT
+  DOCTOR
   ADMIN
-  RESEARCHER
-  HEALTHCARE_PROVIDER
 }
 
-enum ConsultationStatus {
+enum VerificationStatus {
   PENDING
-  IN_PROGRESS
+  VERIFIED
+  REJECTED
+}
+
+enum SlotStatus {
+  AVAILABLE
+  BOOKED
+  BLOCKED
+}
+
+enum AppointmentStatus {
+  SCHEDULED
   COMPLETED
   CANCELLED
 }
 
-enum ConsultationType {
-  CHAT
-  VIDEO
-  ANALYSIS
-  EMERGENCY
+enum TransactionType {
+  CREDIT_PURCHASE
+  APPOINTMENT_DEDUCTION
+  ADMIN_ADJUSTMENT
 }
 
-enum NotificationType {
-  PATENT_STATUS_UPDATE
-  MEDICAL_CONSULTATION
-  SUBSCRIPTION_UPDATE
-  SYSTEM_ANNOUNCEMENT
-  AI_ANALYSIS_COMPLETE
-}
-
-enum PatentCategory {
-  MEDICAL_DEVICE
-  PHARMACEUTICAL
-  BIOTECHNOLOGY
-  DIGITAL_HEALTH
-  DIAGNOSTICS
-  THERAPEUTICS
-  SURGICAL_INSTRUMENTS
-  HEALTH_MONITORING
-  AI_HEALTHCARE
-  TELEMEDICINE
-}
-
-enum PatentStatus {
-  DRAFT
-  SUBMITTED
-  UNDER_REVIEW
-  APPROVED
-  REJECTED
-  PUBLISHED
-  EXPIRED
-}
-
-enum SubscriptionPlan {
-  FREE
-  BASIC
-  PREMIUM
-  ENTERPRISE
-}
-
-enum SubscriptionStatus {
-  ACTIVE
-  CANCELED
-  PAST_DUE
-  EXPIRED
-}
-
-enum UrgencyLevel {
-  LOW
-  MODERATE
-  HIGH
-  EMERGENCY
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
 }
