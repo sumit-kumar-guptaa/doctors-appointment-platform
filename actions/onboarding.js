@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
+import { checkUser } from "@/lib/checkUser";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -14,25 +15,27 @@ export async function setUserRole(formData) {
     throw new Error("Unauthorized");
   }
 
-  // Find user in our database
-  const user = await db.user.findUnique({
-    where: { clerkUserId: userId },
-  });
-
-  if (!user) throw new Error("User not found in database");
-
-  const role = formData.get("role");
-
-  if (!role || !["PATIENT", "DOCTOR"].includes(role)) {
-    throw new Error("Invalid role selection");
-  }
-
   try {
+    // Get or create user in our database
+    const user = await checkUser();
+
+    if (!user) {
+      throw new Error("Failed to create or retrieve user - user is null");
+    }
+
+    console.log("✅ User retrieved/created successfully:", user.id);
+
+    const role = formData.get("role");
+
+    if (!role || !["PATIENT", "DOCTOR"].includes(role)) {
+      throw new Error("Invalid role selection");
+    }
+
     // For patient role - simple update
     if (role === "PATIENT") {
       await db.user.update({
         where: {
-          clerkUserId: userId,
+          id: user.id,
         },
         data: {
           role: "PATIENT",
@@ -57,7 +60,7 @@ export async function setUserRole(formData) {
 
       await db.user.update({
         where: {
-          clerkUserId: userId,
+          id: user.id,
         },
         data: {
           role: "DOCTOR",
@@ -89,12 +92,8 @@ export async function getCurrentUser() {
   }
 
   try {
-    const user = await db.user.findUnique({
-      where: {
-        clerkUserId: userId,
-      },
-    });
-
+    // Use checkUser to get or create user
+    const user = await checkUser();
     return user;
   } catch (error) {
     console.error("Failed to get user information:", error);
