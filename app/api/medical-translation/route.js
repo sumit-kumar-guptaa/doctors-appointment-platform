@@ -5,7 +5,7 @@
 
 import { NextResponse } from 'next/server';
 import RealMedicalTranslation from '@/lib/real-medical-translation';
-import prisma from '@/lib/prisma';
+import { db } from '@/lib/prisma';
 
 // Global translation instances
 const translationSessions = new Map();
@@ -70,7 +70,7 @@ async function initializeTranslationSession(data) {
     translationSessions.set(sessionId, translator);
 
     // Store session in database
-    await prisma.translationSession.create({
+    await db.translationSession.create({
       data: {
         id: sessionId,
         patientId,
@@ -187,7 +187,7 @@ async function storeTranslation(data) {
     const { translation } = data;
 
     // Store translation in database
-    await prisma.medicalTranslation.create({
+    await db.medicalTranslation.create({
       data: {
         id: translation.id,
         sessionId: translation.sessionId,
@@ -371,7 +371,7 @@ async function endTranslationSession(data, translator) {
     const result = await translator.endSession();
 
     // Update database session
-    await prisma.translationSession.update({
+    await db.translationSession.update({
       where: { id: sessionId },
       data: {
         status: 'COMPLETED',
@@ -419,7 +419,7 @@ export async function DELETE(request) {
     }
 
     // Update database
-    await prisma.translationSession.update({
+    await db.translationSession.update({
       where: { id: sessionId },
       data: {
         status: 'CANCELLED',

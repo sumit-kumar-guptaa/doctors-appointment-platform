@@ -4,7 +4,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { db } from '@/lib/prisma';
 
 export async function POST(request) {
   try {
@@ -45,7 +45,7 @@ async function initializeIntegratedSession(data) {
       .filter(result => result.success).length;
 
     // Store integrated session
-    await prisma.medicalAISession.create({
+    await db.medicalAISession.create({
       data: {
         id: sessionId,
         patientId,
@@ -114,7 +114,7 @@ export async function GET(request) {
 
 async function getSessionStatus(sessionId) {
   try {
-    const session = await prisma.medicalAISession.findUnique({
+    const session = await db.medicalAISession.findUnique({
       where: { id: sessionId }
     });
 
@@ -150,30 +150,30 @@ async function getComprehensiveSummary(sessionId) {
       drugInteractions,
       translations
     ] = await Promise.all([
-      prisma.medicalAISession.findUnique({
+      db.medicalAISession.findUnique({
         where: { id: sessionId }
       }),
-      prisma.healthMeasurement.findMany({
+      db.healthMeasurement.findMany({
         where: { sessionId },
         orderBy: { timestamp: 'desc' },
         take: 10
       }),
-      prisma.emotionAnalysis.findMany({
+      db.emotionAnalysis.findMany({
         where: { sessionId },
         orderBy: { timestamp: 'desc' },
         take: 10
       }),
-      prisma.medicalDiagnosis.findMany({
+      db.medicalDiagnosis.findMany({
         where: { sessionId },
         orderBy: { timestamp: 'desc' },
         take: 5
       }),
-      prisma.drugInteractionCheck.findMany({
+      db.drugInteractionCheck.findMany({
         where: { sessionId },
         orderBy: { timestamp: 'desc' },
         take: 10
       }),
-      prisma.medicalTranslation.findMany({
+      db.medicalTranslation.findMany({
         where: { sessionId },
         orderBy: { timestamp: 'desc' },
         take: 20
@@ -255,7 +255,7 @@ async function endIntegratedSession(data) {
     const { sessionId, endResults, sessionEndTime } = data;
 
     // Update session with end results
-    await prisma.medicalAISession.update({
+    await db.medicalAISession.update({
       where: { id: sessionId },
       data: {
         status: 'COMPLETED',

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { db as prisma } from '@/lib/prisma';
+import { db } from '@/lib/prisma';
 import { v4 as uuidv4 } from 'uuid';
 
 // Initiate Emergency Call
@@ -18,7 +18,7 @@ export async function POST(request) {
     }
 
     // Verify emergency case exists
-    const emergencyCase = await prisma.emergencyCase.findUnique({
+    const emergencyCase = await db.emergencyCase.findUnique({
       where: { id: emergencyId },
       include: { assignedDoctor: true }
     });
@@ -31,7 +31,7 @@ export async function POST(request) {
     }
 
     // Verify doctor availability
-    const doctor = await prisma.doctor.findUnique({
+    const doctor = await db.doctor.findUnique({
       where: { 
         id: doctorId,
         status: 'VERIFIED',
@@ -60,7 +60,7 @@ export async function POST(request) {
     const roomName = `emergency-${emergencyId}-${callSessionId}`;
 
     // Create emergency call record
-    const emergencyCall = await prisma.emergencyCall.create({
+    const emergencyCall = await db.emergencyCall.create({
       data: {
         id: callSessionId,
         emergencyId,
@@ -74,7 +74,7 @@ export async function POST(request) {
     });
 
     // Update emergency case with assigned doctor
-    await prisma.emergencyCase.update({
+    await db.emergencyCase.update({
       where: { id: emergencyId },
       data: {
         assignedDoctorId: doctorId,
@@ -128,7 +128,7 @@ export async function GET(request) {
       );
     }
 
-    const emergencyCall = await prisma.emergencyCall.findUnique({
+    const emergencyCall = await db.emergencyCall.findUnique({
       where: { id: callId },
       include: {
         emergency: true,
@@ -192,7 +192,7 @@ export async function PUT(request) {
       );
     }
 
-    const emergencyCall = await prisma.emergencyCall.findUnique({
+    const emergencyCall = await db.emergencyCall.findUnique({
       where: { id: callId }
     });
 
@@ -208,7 +208,7 @@ export async function PUT(request) {
     const duration = Math.floor((endTime - emergencyCall.startedAt) / 1000); // in seconds
 
     // Update call record
-    await prisma.emergencyCall.update({
+    await db.emergencyCall.update({
       where: { id: callId },
       data: {
         status: 'COMPLETED',
@@ -220,7 +220,7 @@ export async function PUT(request) {
     });
 
     // Update emergency case status
-    await prisma.emergencyCase.update({
+    await db.emergencyCase.update({
       where: { id: emergencyCall.emergencyId },
       data: {
         status: 'CONSULTATION_COMPLETED',
@@ -286,7 +286,7 @@ async function notifyDoctorEmergencyCall(doctorId, emergencyCall) {
     console.log(`Notifying doctor ${doctorId} about emergency call ${emergencyCall.id}`);
     
     // Create notification record
-    await prisma.notification.create({
+    await db.notification.create({
       data: {
         doctorId,
         type: 'EMERGENCY_CALL',
@@ -309,7 +309,7 @@ async function notifyDoctorEmergencyCall(doctorId, emergencyCall) {
 // Generate Consultation Summary
 async function generateConsultationSummary(emergencyId, duration) {
   try {
-    const emergencyCase = await prisma.emergencyCase.findUnique({
+    const emergencyCase = await db.emergencyCase.findUnique({
       where: { id: emergencyId },
       include: {
         assignedDoctor: {
@@ -335,7 +335,7 @@ async function generateConsultationSummary(emergencyId, duration) {
     };
 
     // Save consultation summary
-    await prisma.consultation.create({
+    await db.consultation.create({
       data: {
         emergencyId,
         doctorId: emergencyCase.assignedDoctorId,

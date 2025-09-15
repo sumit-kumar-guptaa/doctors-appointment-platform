@@ -4,7 +4,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { db } from '@/lib/prisma';
 
 export async function POST(request) {
   try {
@@ -41,7 +41,7 @@ async function initializeEmotionSession(data) {
     } = data;
 
     // Store emotion session in database
-    await prisma.emotionSession.create({
+    await db.emotionSession.create({
       data: {
         id: sessionId,
         patientId,
@@ -78,7 +78,7 @@ async function storeEmotionData(data) {
     } = data;
 
     // Store emotion analysis record
-    await prisma.emotionAnalysis.create({
+    await db.emotionAnalysis.create({
       data: {
         sessionId,
         patientId,
@@ -149,7 +149,7 @@ async function getEmotionHistory(request) {
     const sessionId = searchParams.get('sessionId');
     const limit = parseInt(searchParams.get('limit')) || 100;
 
-    const emotionHistory = await prisma.emotionAnalysis.findMany({
+    const emotionHistory = await db.emotionAnalysis.findMany({
       where: { sessionId },
       orderBy: { timestamp: 'desc' },
       take: limit
@@ -174,7 +174,7 @@ async function getEmotionStats(request) {
     const { searchParams } = new URL(request.url);
     const sessionId = searchParams.get('sessionId');
 
-    const stats = await prisma.emotionAnalysis.aggregate({
+    const stats = await db.emotionAnalysis.aggregate({
       where: { sessionId },
       _avg: {
         stressLevel: true,
@@ -192,7 +192,7 @@ async function getEmotionStats(request) {
       _count: true
     });
 
-    const alertCount = await prisma.emotionAlert.count({
+    const alertCount = await db.emotionAlert.count({
       where: { sessionId }
     });
 
@@ -221,7 +221,7 @@ async function getEmotionAlerts(request) {
     const sessionId = searchParams.get('sessionId');
     const acknowledged = searchParams.get('acknowledged') === 'true';
 
-    const alerts = await prisma.emotionAlert.findMany({
+    const alerts = await db.emotionAlert.findMany({
       where: {
         sessionId,
         acknowledged: acknowledged ? true : undefined
@@ -280,7 +280,7 @@ async function endEmotionSession(data) {
     const { sessionId, finalStats } = data;
 
     // Update emotion session
-    await prisma.emotionSession.update({
+    await db.emotionSession.update({
       where: { id: sessionId },
       data: {
         status: 'COMPLETED',
@@ -308,7 +308,7 @@ async function acknowledgeEmotionAlert(data) {
   try {
     const { alertId, acknowledgedBy } = data;
 
-    await prisma.emotionAlert.update({
+    await db.emotionAlert.update({
       where: { id: alertId },
       data: {
         acknowledged: true,

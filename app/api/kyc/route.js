@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { db as prisma } from '@/lib/prisma';
+import { db } from '@/lib/prisma';
 import Stripe from 'stripe';
 
 // Validate Stripe configuration
@@ -47,7 +47,7 @@ export async function POST(request) {
     const paymentIntent = await createVerificationPayment();
     
     // Create or update KYC record
-    const kycRecord = await prisma.kycVerification.upsert({
+    const kycRecord = await db.kycVerification.upsert({
       where: { 
         userId: userId || 'anonymous'
       },
@@ -75,7 +75,7 @@ export async function POST(request) {
 
     // Link KYC to emergency case if provided
     if (emergencyId) {
-      await prisma.emergencyCase.update({
+      await db.emergencyCase.update({
         where: { id: emergencyId },
         data: { 
           kycVerificationId: kycRecord.id,
@@ -124,7 +124,7 @@ export async function GET(request) {
       );
     }
 
-    const kycRecord = await prisma.kycVerification.findFirst({
+    const kycRecord = await db.kycVerification.findFirst({
       where: kycId ? { id: kycId } : { userId },
       orderBy: { createdAt: 'desc' }
     });
@@ -183,7 +183,7 @@ async function completeKYCVerification(kycId) {
     // Simulate verification process with external APIs
     const verificationResult = await simulateDocumentVerification();
     
-    await prisma.kycVerification.update({
+    await db.kycVerification.update({
       where: { id: kycId },
       data: {
         verificationStatus: verificationResult.success ? 'VERIFIED' : 'REJECTED',

@@ -4,7 +4,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { db } from '@/lib/prisma';
 
 export async function POST(request) {
   try {
@@ -21,7 +21,7 @@ export async function POST(request) {
     const alertRecords = [];
 
     for (const alert of alerts) {
-      const alertRecord = await prisma.emotionAlert.create({
+      const alertRecord = await db.emotionAlert.create({
         data: {
           sessionId,
           patientId,
@@ -61,7 +61,7 @@ async function sendEmotionNotifications(alertRecords, doctorId) {
   try {
     // Create notifications for doctor
     for (const alert of alertRecords) {
-      await prisma.notification.create({
+      await db.notification.create({
         data: {
           doctorId,
           type: 'EMOTIONAL_ALERT',
@@ -96,7 +96,7 @@ export async function GET(request) {
       whereClause.severity = severity;
     }
 
-    const alerts = await prisma.emotionAlert.findMany({
+    const alerts = await db.emotionAlert.findMany({
       where: whereClause,
       orderBy: { timestamp: 'desc' },
       include: {

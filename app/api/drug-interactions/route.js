@@ -4,7 +4,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { db } from '@/lib/prisma';
 
 export async function POST(request) {
   try {
@@ -43,7 +43,7 @@ async function initializeDrugSession(data) {
     } = data;
 
     // Store drug interaction session
-    await prisma.drugInteractionSession.create({
+    await db.drugInteractionSession.create({
       data: {
         id: sessionId,
         patientId,
@@ -56,7 +56,7 @@ async function initializeDrugSession(data) {
 
     // Store initial medications
     for (const medication of initialMedications) {
-      await prisma.patientMedication.create({
+      await db.patientMedication.create({
         data: {
           sessionId,
           patientId,
@@ -97,7 +97,7 @@ async function storeInteractionCheck(data) {
     } = data;
 
     // Store interaction check
-    const checkRecord = await prisma.drugInteractionCheck.create({
+    const checkRecord = await db.drugInteractionCheck.create({
       data: {
         sessionId,
         patientId,
@@ -117,7 +117,7 @@ async function storeInteractionCheck(data) {
 
     // Store individual interactions
     for (const interaction of checkData.interactions) {
-      await prisma.drugInteraction.create({
+      await db.drugInteraction.create({
         data: {
           checkId: checkRecord.id,
           sessionId,
@@ -163,7 +163,7 @@ async function storeMedicationChange(data) {
     } = data;
 
     // Store medication change
-    await prisma.medicationChange.create({
+    await db.medicationChange.create({
       data: {
         sessionId,
         patientId,
@@ -180,7 +180,7 @@ async function storeMedicationChange(data) {
 
     // Update medication status
     if (changeData.action === 'add') {
-      await prisma.patientMedication.create({
+      await db.patientMedication.create({
         data: {
           sessionId,
           patientId,
@@ -196,7 +196,7 @@ async function storeMedicationChange(data) {
         }
       });
     } else if (changeData.action === 'remove') {
-      await prisma.patientMedication.updateMany({
+      await db.patientMedication.updateMany({
         where: {
           sessionId,
           patientId,
@@ -230,7 +230,7 @@ async function createInteractionAlert(sessionId, patientId, checkId, checkData) 
       ? `CRITICAL: Contraindicated drug interaction detected with ${checkData.newMedication.name}`
       : `HIGH RISK: Major drug interaction detected with ${checkData.newMedication.name}`;
 
-    await prisma.drugInteractionAlert.create({
+    await db.drugInteractionAlert.create({
       data: {
         sessionId,
         patientId,
@@ -293,7 +293,7 @@ export async function GET(request) {
 
 async function getPatientMedications(sessionId) {
   try {
-    const medications = await prisma.patientMedication.findMany({
+    const medications = await db.patientMedication.findMany({
       where: {
         sessionId,
         status: 'ACTIVE'
@@ -317,7 +317,7 @@ async function getPatientMedications(sessionId) {
 
 async function getInteractionChecks(sessionId) {
   try {
-    const checks = await prisma.drugInteractionCheck.findMany({
+    const checks = await db.drugInteractionCheck.findMany({
       where: { sessionId },
       orderBy: { timestamp: 'desc' },
       include: {
@@ -341,7 +341,7 @@ async function getInteractionChecks(sessionId) {
 
 async function getInteractionAlerts(sessionId) {
   try {
-    const alerts = await prisma.drugInteractionAlert.findMany({
+    const alerts = await db.drugInteractionAlert.findMany({
       where: { sessionId },
       orderBy: { timestamp: 'desc' }
     });
@@ -362,7 +362,7 @@ async function getInteractionAlerts(sessionId) {
 
 async function getMedicationHistory(sessionId) {
   try {
-    const history = await prisma.medicationChange.findMany({
+    const history = await db.medicationChange.findMany({
       where: { sessionId },
       orderBy: { timestamp: 'desc' }
     });
@@ -418,7 +418,7 @@ async function endDrugSession(data) {
     const { sessionId, stats } = data;
 
     // Update drug interaction session
-    await prisma.drugInteractionSession.update({
+    await db.drugInteractionSession.update({
       where: { id: sessionId },
       data: {
         status: 'COMPLETED',
@@ -447,7 +447,7 @@ async function acknowledgeInteractionAlert(data) {
   try {
     const { alertId, acknowledgedBy } = data;
 
-    await prisma.drugInteractionAlert.update({
+    await db.drugInteractionAlert.update({
       where: { id: alertId },
       data: {
         acknowledged: true,

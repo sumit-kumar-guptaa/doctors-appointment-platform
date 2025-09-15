@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { Vonage } from '@vonage/server-sdk';
 import { Auth } from '@vonage/auth';
-import { db as prisma } from '@/lib/prisma';
+import { db } from '@/lib/prisma';
 
 // Initialize Vonage Video API client
 const credentials = new Auth({
@@ -62,7 +62,7 @@ export async function POST(request) {
 
     // Store session info in database if appointment exists
     if (appointmentId) {
-      await prisma.appointment.update({
+      await db.appointment.update({
         where: { 
           id: appointmentId,
           OR: [
@@ -125,7 +125,7 @@ export async function GET(request) {
 
     if (appointmentId) {
       // Get session info from appointment
-      const appointment = await prisma.appointment.findFirst({
+      const appointment = await db.appointment.findFirst({
         where: {
           id: appointmentId,
           OR: [
@@ -205,7 +205,7 @@ export async function GET(request) {
         };
 
         // Update tokens in database
-        await prisma.appointment.update({
+        await db.appointment.update({
           where: { id: appointmentId },
           data: {
             videoTokens: JSON.stringify(tokens)
@@ -300,7 +300,7 @@ export async function PATCH(request) {
 
       // Store archive ID in appointment
       if (appointmentId) {
-        await prisma.appointment.update({
+        await db.appointment.update({
           where: { id: appointmentId },
           data: {
             recordingId: archive.id,
@@ -324,7 +324,7 @@ export async function PATCH(request) {
       let archiveId = body.archiveId;
       
       if (!archiveId && appointmentId) {
-        const appointment = await prisma.appointment.findUnique({
+        const appointment = await db.appointment.findUnique({
           where: { id: appointmentId }
         });
         archiveId = appointment?.recordingId;
@@ -342,7 +342,7 @@ export async function PATCH(request) {
 
       // Update appointment status
       if (appointmentId) {
-        await prisma.appointment.update({
+        await db.appointment.update({
           where: { id: appointmentId },
           data: {
             recordingStatus: 'stopped',
@@ -393,7 +393,7 @@ export async function DELETE(request) {
 
     if (appointmentId) {
       // Clean up appointment video data
-      await prisma.appointment.update({
+      await db.appointment.update({
         where: { 
           id: appointmentId,
           OR: [

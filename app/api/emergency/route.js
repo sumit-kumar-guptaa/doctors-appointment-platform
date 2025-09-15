@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { db as prisma } from '@/lib/prisma';
+import { db } from '@/lib/prisma';
 
 // Emergency Assessment Endpoint
 export async function POST(request) {
@@ -14,7 +14,7 @@ export async function POST(request) {
     const isEmergency = emergencyScore >= 7 || severity === 'critical';
     
     // Create emergency record
-    const emergencyRecord = await prisma.emergencyCase.create({
+    const emergencyRecord = await db.emergencyCase.create({
       data: {
         userId: userId || null,
         symptoms: JSON.stringify(symptoms),
@@ -74,7 +74,7 @@ export async function GET(request) {
       );
     }
 
-    const emergencyCase = await prisma.emergencyCase.findUnique({
+    const emergencyCase = await db.emergencyCase.findUnique({
       where: { id: emergencyId },
       include: {
         assignedDoctor: true,
@@ -164,7 +164,7 @@ function calculateEmergencyScore(symptoms, description) {
 // Find Available Emergency Doctors
 async function findEmergencyDoctors() {
   try {
-    const doctors = await prisma.doctor.findMany({
+    const doctors = await db.doctor.findMany({
       where: {
         status: 'VERIFIED',
         isOnline: true,
@@ -233,7 +233,7 @@ async function notifyEmergencyDoctors(emergencyId, doctors) {
     }));
 
     // In real implementation, save to database
-    // await prisma.emergencyNotification.createMany({ data: notifications });
+    // await db.emergencyNotification.createMany({ data: notifications });
 
   } catch (error) {
     console.error('Error notifying emergency doctors:', error);

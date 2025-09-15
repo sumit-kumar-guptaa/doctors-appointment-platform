@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import Stripe from 'stripe';
 import { clerkClient } from '@clerk/nextjs/server';
-import { db as prisma } from '@/lib/prisma';
+import { db } from '@/lib/prisma';
 
 // Validate Stripe configuration
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -54,7 +54,7 @@ export async function POST(req) {
           });
 
           // Record transaction in database
-          await prisma.creditTransaction.create({
+          await db.creditTransaction.create({
             data: {
               userId,
               type: 'CREDIT_PURCHASE',

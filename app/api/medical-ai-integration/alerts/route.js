@@ -4,7 +4,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { db } from '@/lib/prisma';
 
 export async function POST(request) {
   try {
@@ -17,7 +17,7 @@ export async function POST(request) {
     } = body;
 
     // Store integrated alert
-    const alertRecord = await prisma.medicalAIAlert.create({
+    const alertRecord = await db.medicalAIAlert.create({
       data: {
         sessionId,
         patientId,
@@ -34,7 +34,7 @@ export async function POST(request) {
     });
 
     // Send notification to medical staff
-    await prisma.notification.create({
+    await db.notification.create({
       data: {
         doctorId,
         type: 'MEDICAL_AI_ALERT',
@@ -83,7 +83,7 @@ export async function GET(request) {
       whereClause.severity = severity.toUpperCase();
     }
 
-    const alerts = await prisma.medicalAIAlert.findMany({
+    const alerts = await db.medicalAIAlert.findMany({
       where: whereClause,
       orderBy: { timestamp: 'desc' },
       include: {
