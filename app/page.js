@@ -11,6 +11,7 @@ import Pricing from "@/components/pricing";
 import { PatientTestimonials } from "@/components/testimonials";
 import { HowItWorks } from "@/components/how-it-works";
 import { MedicalLampHero } from "@/components/medical-lamp-hero";
+import AIFeaturesShowcase from "@/components/ai-features-showcase";
 import { creditBenefits, features, testimonials } from "@/lib/data";
 
 export default function Home() {
@@ -59,6 +60,28 @@ export default function Home() {
 
       {/* How It Works Section */}
       <HowItWorks />
+
+      {/* AI Features Showcase Section */}
+      <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-br from-slate-900 to-slate-800">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12 md:mb-16">
+            <Badge
+              variant="outline"
+              className="bg-purple-900/30 border-purple-700/30 px-4 py-1 text-purple-400 text-sm font-medium mb-4"
+            >
+              Cutting-edge AI Technology
+            </Badge>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4">
+              Revolutionary AI Healthcare Features
+            </h2>
+            <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
+              Experience the future of healthcare with our advanced AI-powered features
+            </p>
+          </div>
+
+          <AIFeaturesShowcase isVisible={true} />
+        </div>
+      </section>
 
       {/* Pricing Section with green medical styling */}
       <section id="pricing" className="py-12 sm:py-16 md:py-20">

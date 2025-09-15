@@ -54,6 +54,11 @@ model User {
   consultations        Consultation[]
   notifications        Notification[]
   kycVerifications     KycVerification[]
+  healthMeasurements   HealthMeasurement[]  @relation("PatientHealthMeasurements")
+  medicalDiagnoses     MedicalDiagnosis[]   @relation("PatientMedicalDiagnoses")
+  emotionAnalyses      EmotionAnalysis[]    @relation("PatientEmotionAnalysis")
+  emotionAlerts        EmotionAlert[]       @relation("PatientEmotionAlerts")
+  medicalAIAlerts      MedicalAIAlert[]     @relation("PatientMedicalAIAlerts")
 }
 
 model Availability {
@@ -75,6 +80,8 @@ model Appointment {
   patientId            String
   doctorId             String
   availabilityId       String?           @unique
+  startTime            DateTime
+  endTime              DateTime
   status               AppointmentStatus @default(SCHEDULED)
   notes                String?
   patientDescription   String?
@@ -89,6 +96,7 @@ model Appointment {
   availability Availability? @relation(fields: [availabilityId], references: [id], onDelete: SetNull)
 
   @@index([status, createdAt])
+  @@index([doctorId, startTime])
 }
 
 model EmergencyCase {
@@ -197,6 +205,320 @@ model Notification {
   doctor      User?               @relation(fields: [doctorId], references: [id])
 
   @@index([isRead, createdAt])
+}
+
+model HealthMeasurement {
+  id                   String    @id @default(cuid())
+  sessionId            String
+  patientId            String?
+  appointmentId        String?
+  heartRate            Int       @default(0)
+  heartRateVariability Int       @default(0)
+  respiratoryRate      Int       @default(0)
+  stressLevel          Int       @default(0)
+  systolicBP           Int       @default(0)
+  diastolicBP          Int       @default(0)
+  oxygenSaturation     Int       @default(0)
+  timestamp            DateTime  @default(now())
+  createdAt            DateTime  @default(now())
+
+  // Relations
+  patient              User?     @relation("PatientHealthMeasurements", fields: [patientId], references: [id])
+
+  @@index([sessionId, timestamp])
+  @@index([patientId, timestamp])
+}
+
+model HealthAlert {
+  id               String    @id @default(cuid())
+  sessionId        String
+  patientId        String?
+  appointmentId    String?
+  alertType        String
+  alertData        String    // JSON array of alerts
+  severity         String    // 'low', 'medium', 'high', 'critical'
+  vitalsSnapshot   String?   // JSON object of vitals at time of alert
+  acknowledged     Boolean   @default(false)
+  acknowledgedAt   DateTime?
+  doctorResponse   String?
+  timestamp        DateTime  @default(now())
+  createdAt        DateTime  @default(now())
+
+  @@index([sessionId, acknowledged])
+  @@index([severity, acknowledged])
+}
+
+model MedicalDiagnosis {
+  id                    String    @id @default(cuid())
+  patientId             String
+  sessionId             String
+  appointmentId         String?
+  rawAnalysis           String    // Full AI response text
+  structuredDiagnosis   String    // JSON object with parsed diagnosis
+  confidenceLevel       Int       @default(0)
+  riskAssessment        String    // JSON object with risk data
+  patientSymptoms       String?   // JSON array of symptoms
+  patientVitals         String?   // JSON object of vitals
+  timestamp             DateTime  @default(now())
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  // Relations
+  patient               User      @relation("PatientMedicalDiagnoses", fields: [patientId], references: [id])
+
+  @@index([patientId, timestamp])
+  @@index([sessionId, timestamp])
+}
+
+model UrgentMedicalAlert {
+  id               String    @id @default(cuid())
+  patientId        String
+  sessionId        String
+  diagnosisId      String?
+  alertType        String
+  riskLevel        String    // 'medium', 'high', 'critical'
+  alertMessage     String
+  redFlags         String?   // JSON array of red flag symptoms
+  acknowledged     Boolean   @default(false)
+  acknowledgedAt   DateTime?
+  acknowledgedBy   String?
+  timestamp        DateTime  @default(now())
+  createdAt        DateTime  @default(now())
+
+  @@index([acknowledged, riskLevel])
+  @@index([patientId, timestamp])
+}
+
+model TranslationSession {
+  id                   String    @id @default(cuid())
+  patientId            String?
+  doctorId             String?
+  sourceLanguage       String
+  targetLanguage       String
+  medicalContext       String?
+  realTimeEnabled      Boolean   @default(true)
+  status               String    @default("ACTIVE")
+  totalTranslations    Int       @default(0)
+  averageConfidence    Float     @default(0.0)
+  medicalTermsTranslated Int     @default(0)
+  createdAt            DateTime  @default(now())
+  endedAt              DateTime?
+  
+  @@index([status, createdAt])
+}
+
+model MedicalTranslation {
+  id                   String    @id @default(cuid())
+  sessionId            String
+  originalText         String
+  translatedText       String
+  sourceLanguage       String
+  targetLanguage       String
+  speaker              String
+  isUrgent             Boolean   @default(false)
+  confidence           Float     @default(0.0)
+  medicalTermsDetected String?   // JSON array
+  timestamp            DateTime  @default(now())
+  createdAt            DateTime  @default(now())
+
+  @@index([sessionId, timestamp])
+}
+
+model EmotionAnalysis {
+  id                   String    @id @default(cuid())
+  sessionId            String
+  patientId            String?
+  emotionData          String    // JSON object with emotion analysis
+  stressLevel          Int       @default(0)
+  anxietyLevel         Int       @default(0)
+  painIndication       Int       @default(0)
+  psychologicalDistress Int      @default(0)
+  medicalIndicators    String?   // JSON array
+  confidence           Float     @default(0.0)
+  timestamp            DateTime  @default(now())
+  createdAt            DateTime  @default(now())
+
+  // Relations
+  patient              User?     @relation("PatientEmotionAnalysis", fields: [patientId], references: [id])
+
+  @@index([sessionId, timestamp])
+  @@index([patientId, timestamp])
+}
+
+model EmotionAlert {
+  id               String    @id @default(cuid())
+  sessionId        String
+  patientId        String?
+  doctorId         String?
+  alertType        String
+  severity         String
+  message          String
+  emotionData      String?   // JSON object
+  acknowledged     Boolean   @default(false)
+  acknowledgedAt   DateTime?
+  timestamp        DateTime  @default(now())
+  createdAt        DateTime  @default(now())
+
+  // Relations
+  patient          User?     @relation("PatientEmotionAlerts", fields: [patientId], references: [id])
+
+  @@index([sessionId, acknowledged])
+  @@index([severity, acknowledged])
+}
+
+model DrugInteractionSession {
+  id                        String    @id @default(cuid())
+  patientId                 String
+  doctorId                  String
+  initialMedicationCount    Int       @default(0)
+  finalMedicationCount      Int       @default(0)
+  validatedMedicationCount  Int       @default(0)
+  totalInteractionChecks    Int       @default(0)
+  status                    String    @default("ACTIVE")
+  createdAt                 DateTime  @default(now())
+  endedAt                   DateTime?
+
+  @@index([patientId, status])
+}
+
+model PatientMedication {
+  id               String    @id @default(cuid())
+  sessionId        String
+  patientId        String
+  medicationName   String
+  rxcui            String?
+  dosage           String?
+  frequency        String?
+  route            String    @default("oral")
+  validated        Boolean   @default(false)
+  status           String    @default("ACTIVE")
+  addedAt          DateTime  @default(now())
+  removedAt        DateTime?
+  createdAt        DateTime  @default(now())
+
+  @@index([sessionId, status])
+  @@index([patientId, status])
+}
+
+model DrugInteractionCheck {
+  id                   String    @id @default(cuid())
+  sessionId            String
+  patientId            String
+  newMedicationName    String
+  newMedicationRxcui   String?
+  totalInteractions    Int       @default(0)
+  riskLevel            String
+  riskScore            Int       @default(0)
+  requiresAction       Boolean   @default(false)
+  recommendation       String?
+  interactionData      String?   // JSON array
+  riskAnalysis         String?   // JSON object
+  timestamp            DateTime  @default(now())
+  createdAt            DateTime  @default(now())
+
+  @@index([sessionId, timestamp])
+  @@index([riskLevel, requiresAction])
+}
+
+model DrugInteraction {
+  id            String    @id @default(cuid())
+  checkId       String
+  sessionId     String
+  drug1Name     String
+  drug1Rxcui    String?
+  drug2Name     String
+  drug2Rxcui    String?
+  description   String
+  severity      String
+  source        String    @default("RxNav")
+  timestamp     DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+
+  @@index([checkId])
+  @@index([severity])
+}
+
+model DrugInteractionAlert {
+  id                    String    @id @default(cuid())
+  sessionId             String
+  patientId             String
+  checkId               String
+  alertType             String
+  severity              String
+  message               String
+  recommendation        String?
+  interactionCount      Int       @default(0)
+  criticalInteractions  Int       @default(0)
+  majorInteractions     Int       @default(0)
+  acknowledged          Boolean   @default(false)
+  acknowledgedBy        String?
+  acknowledgedAt        DateTime?
+  timestamp             DateTime  @default(now())
+  createdAt             DateTime  @default(now())
+
+  @@index([sessionId, acknowledged])
+  @@index([severity, acknowledged])
+}
+
+model MedicationChange {
+  id              String    @id @default(cuid())
+  sessionId       String
+  patientId       String
+  action          String    // 'add' or 'remove'
+  medicationName  String
+  medicationRxcui String?
+  medicationData  String?   // JSON object
+  interactionData String?   // JSON array
+  riskData        String?   // JSON object
+  timestamp       DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+
+  @@index([sessionId, timestamp])
+  @@index([patientId, action])
+}
+
+model MedicalAISession {
+  id                        String    @id @default(cuid())
+  patientId                 String
+  doctorId                  String
+  appointmentId             String?
+  healthMonitoringEnabled   Boolean   @default(true)
+  medicalDiagnosisEnabled   Boolean   @default(true)
+  translationEnabled        Boolean   @default(true)
+  emotionAnalysisEnabled    Boolean   @default(true)
+  drugInteractionsEnabled   Boolean   @default(true)
+  systemsInitialized        Int       @default(0)
+  initializationData        String?   // JSON object
+  endResults                String?   // JSON object
+  status                    String    @default("ACTIVE")
+  createdAt                 DateTime  @default(now())
+  endedAt                   DateTime?
+
+  @@index([patientId, status])
+  @@index([doctorId, status])
+}
+
+model MedicalAIAlert {
+  id                      String    @id @default(cuid())
+  sessionId               String
+  patientId               String
+  doctorId                String
+  alertType               String
+  severity                String
+  message                 String
+  alertData               String?   // JSON object
+  requiresImmediateAction Boolean   @default(false)
+  acknowledged            Boolean   @default(false)
+  acknowledgedBy          String?
+  acknowledgedAt          DateTime?
+  timestamp               DateTime  @default(now())
+  createdAt               DateTime  @default(now())
+
+  // Relations
+  patient                 User      @relation("PatientMedicalAIAlerts", fields: [patientId], references: [id])
+
+  @@index([sessionId, acknowledged])
+  @@index([severity, acknowledged])
 }
 
 model CreditTransaction {

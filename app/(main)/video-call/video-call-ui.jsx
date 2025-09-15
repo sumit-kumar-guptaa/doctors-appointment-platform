@@ -1,327 +1,271 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import Script from "next/script";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Loader2,
+  AlertTriangle,
+  Phone,
   Video,
-  VideoOff,
-  Mic,
-  MicOff,
-  PhoneOff,
-  User,
+  Clock,
+  Heart,
+  Activity
 } from "lucide-react";
 import { toast } from "sonner";
+import VonageVideoCall from "@/components/vonage-video-call";
+import HealthMonitoringPanel from "@/components/health-monitoring-panel";
+import TranslationPanel from "@/components/translation-panel";
+import EmotionAnalysisPanel from "@/components/emotion-analysis-panel";
 
-export default function VideoCall({ sessionId, token }) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [scriptLoaded, setScriptLoaded] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
-  const [isVideoEnabled, setIsVideoEnabled] = useState(true);
-  const [isAudioEnabled, setIsAudioEnabled] = useState(true);
-
-  const sessionRef = useRef(null);
-  const publisherRef = useRef(null);
+export default function EmergencyVideoCall({ sessionId, token, appointmentId }) {
+  const [isEmergencyCall, setIsEmergencyCall] = useState(true);
+  const [callStarted, setCallStarted] = useState(false);
+  const [emergencyType, setEmergencyType] = useState('general');
+  const [activePanel, setActivePanel] = useState('monitoring'); // 'monitoring', 'translation', 'emotion'
+  const [translationEnabled, setTranslationEnabled] = useState(false);
+  const [emotionAnalysisEnabled, setEmotionAnalysisEnabled] = useState(true);
+  const videoRef = useRef(null);
 
   const router = useRouter();
 
-  const appId = process.env.NEXT_PUBLIC_VONAGE_APPLICATION_ID;
-
-  // Handle script load
-  const handleScriptLoad = () => {
-    setScriptLoaded(true);
-    if (!window.OT) {
-      toast.error("Failed to load Vonage Video API");
-      setIsLoading(false);
-      return;
-    }
-    initializeSession();
-  };
-
-  // Initialize video session
-  const initializeSession = () => {
-    if (!appId || !sessionId || !token) {
-      toast.error("Missing required video call parameters");
-      router.push("/appointments");
-      return;
-    }
-
-    console.log({ appId, sessionId, token });
-
-    try {
-      // Initialize the session
-      sessionRef.current = window.OT.initSession(appId, sessionId);
-
-      // Subscribe to new streams
-      sessionRef.current.on("streamCreated", (event) => {
-        console.log(event, "New stream created");
-
-        sessionRef.current.subscribe(
-          event.stream,
-          "subscriber",
-          {
-            insertMode: "append",
-            width: "100%",
-            height: "100%",
-          },
-          (error) => {
-            if (error) {
-              toast.error("Error connecting to other participant's stream");
-            }
-          }
-        );
-      });
-
-      // Handle session events
-      sessionRef.current.on("sessionConnected", () => {
-        setIsConnected(true);
-        setIsLoading(false);
-
-        // THIS IS THE FIX - Initialize publisher AFTER session connects
-        publisherRef.current = window.OT.initPublisher(
-          "publisher", // This targets the div with id="publisher"
-          {
-            insertMode: "replace", // Change from "append" to "replace"
-            width: "100%",
-            height: "100%",
-            publishAudio: isAudioEnabled,
-            publishVideo: isVideoEnabled,
-          },
-          (error) => {
-            if (error) {
-              console.error("Publisher error:", error);
-              toast.error("Error initializing your camera and microphone");
-            } else {
-              console.log(
-                "Publisher initialized successfully - you should see your video now"
-              );
-            }
-          }
-        );
-      });
-
-      sessionRef.current.on("sessionDisconnected", () => {
-        setIsConnected(false);
-      });
-
-      // Connect to the session
-      sessionRef.current.connect(token, (error) => {
-        if (error) {
-          toast.error("Error connecting to video session");
-        } else {
-          // Publish your stream AFTER connecting
-          if (publisherRef.current) {
-            sessionRef.current.publish(publisherRef.current, (error) => {
-              if (error) {
-                console.log("Error publishing stream:", error);
-                toast.error("Error publishing your stream");
-              } else {
-                console.log("Stream published successfully");
-              }
-            });
-          }
-        }
-      });
-    } catch (error) {
-      toast.error("Failed to initialize video call");
-      setIsLoading(false);
+  // Emergency call types
+  const emergencyTypes = {
+    general: {
+      icon: AlertTriangle,
+      label: 'General Emergency',
+      color: 'text-red-500',
+      bgColor: 'bg-red-50 border-red-200'
+    },
+    cardiac: {
+      icon: Heart,
+      label: 'Cardiac Emergency',
+      color: 'text-red-600',
+      bgColor: 'bg-red-100 border-red-300'
+    },
+    respiratory: {
+      icon: Activity,
+      label: 'Respiratory Emergency',
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50 border-orange-200'
     }
   };
 
-  // Toggle video
-  const toggleVideo = () => {
-    if (publisherRef.current) {
-      publisherRef.current.publishVideo(!isVideoEnabled);
-      setIsVideoEnabled((prev) => !prev);
-    }
+  const handleCallStart = () => {
+    setCallStarted(true);
+    toast.success("Connected to emergency medical consultation");
   };
 
-  // Toggle audio
-  const toggleAudio = () => {
-    if (publisherRef.current) {
-      publisherRef.current.publishAudio(!isAudioEnabled);
-      setIsAudioEnabled((prev) => !prev);
-    }
-  };
-
-  // End call
-  const endCall = () => {
-    // Properly destroy publisher
-    if (publisherRef.current) {
-      publisherRef.current.destroy();
-      publisherRef.current = null;
-    }
-
-    // Disconnect session
-    if (sessionRef.current) {
-      sessionRef.current.disconnect();
-      sessionRef.current = null;
-    }
-
+  const handleCallEnd = () => {
+    setCallStarted(false);
+    toast.info("Emergency consultation ended");
     router.push("/appointments");
   };
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (publisherRef.current) {
-        publisherRef.current.destroy();
-      }
-      if (sessionRef.current) {
-        sessionRef.current.disconnect();
-      }
-    };
-  }, []);
-
-  if (!sessionId || !token || !appId) {
+  // If call hasn't started, show emergency pre-call interface
+  if (!callStarted) {
     return (
-      <div className="container mx-auto px-4 py-12 text-center">
-        <h1 className="text-3xl font-bold text-white mb-4">
-          Invalid Video Call
-        </h1>
-        <p className="text-muted-foreground mb-6">
-          Missing required parameters for the video call.
-        </p>
-        <Button
-          onClick={() => router.push("/appointments")}
-          className="bg-emerald-600 hover:bg-emerald-700"
-        >
-          Back to Appointments
-        </Button>
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="pt-6">
+            <div className="text-center space-y-6">
+              {/* Emergency header */}
+              <div className="flex items-center justify-center space-x-3">
+                <div className="bg-red-100 p-3 rounded-full">
+                  <AlertTriangle className="h-8 w-8 text-red-600" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-red-800">
+                    Emergency Video Consultation
+                  </h1>
+                  <p className="text-red-600">
+                    Connecting you to medical assistance
+                  </p>
+                </div>
+              </div>
+
+              {/* Emergency type selection */}
+              <div className="space-y-3">
+                <p className="text-sm text-red-700 font-medium">
+                  Select the type of emergency:
+                </p>
+                <div className="grid gap-3">
+                  {Object.entries(emergencyTypes).map(([key, type]) => {
+                    const IconComponent = type.icon;
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => setEmergencyType(key)}
+                        className={`p-4 rounded-lg border-2 transition-all text-left ${
+                          emergencyType === key
+                            ? 'border-red-400 bg-red-100'
+                            : 'border-red-200 bg-white hover:border-red-300'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <IconComponent className={`h-5 w-5 ${type.color}`} />
+                          <span className="font-medium text-gray-800">
+                            {type.label}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Important information */}
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm">
+                <div className="flex items-start space-x-2">
+                  <Clock className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-amber-800">
+                    <p className="font-medium mb-1">Before starting the call:</p>
+                    <ul className="space-y-1 text-xs">
+                      <li>• Ensure you have a stable internet connection</li>
+                      <li>• Have your medical history or medications ready if possible</li>
+                      <li>• Be in a quiet, well-lit environment</li>
+                      <li>• If this is a life-threatening emergency, call 911 immediately</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Start call button */}
+              <div className="space-y-4">
+                <Button
+                  onClick={handleCallStart}
+                  size="lg"
+                  className="w-full bg-red-600 hover:bg-red-700 text-white py-4"
+                >
+                  <Video className="h-5 w-5 mr-2" />
+                  Start Emergency Video Call
+                </Button>
+                
+                <Button
+                  onClick={() => router.push("/appointments")}
+                  variant="outline"
+                  className="w-full border-red-300 text-red-700 hover:bg-red-50"
+                >
+                  Cancel
+                </Button>
+              </div>
+
+              {/* Disclaimer */}
+              <p className="text-xs text-red-600 bg-red-100 p-3 rounded-lg">
+                This service provides medical consultation but is not a replacement 
+                for emergency services. For life-threatening emergencies, call 911 immediately.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
+  // Show the video call interface with emergency context
   return (
-    <>
-      <Script
-        src="https://unpkg.com/@vonage/client-sdk-video@latest/dist/js/opentok.js"
-        onLoad={handleScriptLoad}
-        onError={() => {
-          toast.error("Failed to load video call script");
-          setIsLoading(false);
-        }}
-      />
+    <div className="min-h-screen bg-gray-900">
+      {/* Emergency header */}
+      <div className="bg-red-600 text-white p-4">
+        <div className="container mx-auto flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <AlertTriangle className="h-6 w-6" />
+            <div>
+              <h1 className="text-lg font-semibold">Emergency Consultation</h1>
+              <p className="text-sm opacity-90">
+                {emergencyTypes[emergencyType].label}
+              </p>
+            </div>
+          </div>
+          <div className="text-sm text-right">
+            <p className="opacity-90">Help is on the way</p>
+            <p className="text-xs">Stay calm and follow instructions</p>
+          </div>
+        </div>
+      </div>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-white mb-2">
-            Video Consultation
-          </h1>
-          <p className="text-muted-foreground">
-            {isConnected
-              ? "Connected"
-              : isLoading
-              ? "Connecting..."
-              : "Connection failed"}
-          </p>
+      {/* Main content area */}
+      <div className="flex-1 grid lg:grid-cols-4 gap-0">
+        {/* Video call section */}
+        <div className="lg:col-span-3">
+          <VonageVideoCall
+            sessionId={sessionId}
+            appointmentId={appointmentId}
+            userRole="patient"
+            onCallEnd={handleCallEnd}
+            className="h-screen"
+            ref={videoRef}
+          />
         </div>
 
-        {isLoading && !scriptLoaded ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <Loader2 className="h-12 w-12 text-emerald-400 animate-spin mb-4" />
-            <p className="text-white text-lg">
-              Loading video call components...
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Publisher (Your video) */}
-              <div className="border border-emerald-900/20 rounded-lg overflow-hidden">
-                <div className="bg-emerald-900/10 px-3 py-2 text-emerald-400 text-sm font-medium">
-                  You
-                </div>
-                <div
-                  id="publisher"
-                  className="w-full h-[300px] md:h-[400px] bg-muted/30"
-                >
-                  {!scriptLoaded && (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="bg-muted/20 rounded-full p-8">
-                        <User className="h-12 w-12 text-emerald-400" />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Subscriber (Other person's video) */}
-              <div className="border border-emerald-900/20 rounded-lg overflow-hidden">
-                <div className="bg-emerald-900/10 px-3 py-2 text-emerald-400 text-sm font-medium">
-                  Other Participant
-                </div>
-                <div
-                  id="subscriber"
-                  className="w-full h-[300px] md:h-[400px] bg-muted/30"
-                >
-                  {(!isConnected || !scriptLoaded) && (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="bg-muted/20 rounded-full p-8">
-                        <User className="h-12 w-12 text-emerald-400" />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Video controls */}
-            <div className="flex justify-center space-x-4">
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={toggleVideo}
-                className={`rounded-full p-4 h-14 w-14 ${
-                  isVideoEnabled
-                    ? "border-emerald-900/30"
-                    : "bg-red-900/20 border-red-900/30 text-red-400"
+        {/* AI Features Panel */}
+        <div className="lg:col-span-1 bg-white overflow-y-auto max-h-screen">
+          {/* Panel Navigation */}
+          <div className="bg-gray-50 border-b p-2">
+            <div className="flex space-x-1">
+              <button
+                onClick={() => setActivePanel('monitoring')}
+                className={`flex-1 px-3 py-2 text-xs rounded transition-colors ${
+                  activePanel === 'monitoring'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-600 hover:bg-gray-100'
                 }`}
-                disabled={!publisherRef.current}
               >
-                {isVideoEnabled ? <Video /> : <VideoOff />}
-              </Button>
-
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={toggleAudio}
-                className={`rounded-full p-4 h-14 w-14 ${
-                  isAudioEnabled
-                    ? "border-emerald-900/30"
-                    : "bg-red-900/20 border-red-900/30 text-red-400"
+                🏥 Health
+              </button>
+              <button
+                onClick={() => setActivePanel('emotion')}
+                className={`flex-1 px-3 py-2 text-xs rounded transition-colors ${
+                  activePanel === 'emotion'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-white text-gray-600 hover:bg-gray-100'
                 }`}
-                disabled={!publisherRef.current}
               >
-                {isAudioEnabled ? <Mic /> : <MicOff />}
-              </Button>
-
-              <Button
-                variant="destructive"
-                size="lg"
-                onClick={endCall}
-                className="rounded-full p-4 h-14 w-14 bg-red-600 hover:bg-red-700"
+                😊 Emotion
+              </button>
+              <button
+                onClick={() => setActivePanel('translation')}
+                className={`flex-1 px-3 py-2 text-xs rounded transition-colors ${
+                  activePanel === 'translation'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-white text-gray-600 hover:bg-gray-100'
+                }`}
               >
-                <PhoneOff />
-              </Button>
-            </div>
-
-            <div className="text-center">
-              <p className="text-muted-foreground text-sm">
-                {isVideoEnabled ? "Camera on" : "Camera off"} •
-                {isAudioEnabled ? " Microphone on" : " Microphone off"}
-              </p>
-              <p className="text-muted-foreground text-sm mt-1">
-                When you're finished with your consultation, click the red
-                button to end the call
-              </p>
+                🌍 Translate
+              </button>
             </div>
           </div>
-        )}
+
+          {/* Panel Content */}
+          <div className="p-4">
+            {activePanel === 'monitoring' && (
+              <HealthMonitoringPanel 
+                videoRef={videoRef}
+                isCallActive={callStarted}
+              />
+            )}
+            
+            {activePanel === 'emotion' && (
+              <EmotionAnalysisPanel
+                videoRef={videoRef}
+                isCallActive={callStarted}
+                isVisible={true}
+              />
+            )}
+            
+            {activePanel === 'translation' && (
+              <TranslationPanel
+                isVisible={true}
+                onTranslationUpdate={(translation) => {
+                  // Handle translation updates during call
+                  console.log('Translation:', translation);
+                }}
+              />
+            )}
+          </div>
+        </div>
       </div>
-    </>
+    </div>
   );
 }

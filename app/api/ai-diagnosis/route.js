@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 
-// AI System Configuration
-const AI_SYSTEM_URL = process.env.AI_SYSTEM_URL || 'http://localhost:8000';
-const MCP_SERVER_URL = process.env.MCP_SERVER_URL || 'http://localhost:8005';
+// AI System Configuration - use Gemini API directly
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
 export async function POST(request) {
   try {
@@ -37,11 +37,11 @@ export async function POST(request) {
       extractedText = await extractTextFromPDF(buffer);
     }
 
-    // Step 2: AI Analysis using your LangGraph system
+    // Step 2: AI Analysis using Gemini API directly
     const aiAnalysis = await performAIAnalysis(extractedText, patientInfo);
 
-    // Step 3: Medical Predictions using MCP server
-    const medicalPredictions = await getMedicalPredictions(extractedText, patientInfo);
+    // Step 3: Medical Predictions using built-in analysis
+    const medicalPredictions = getMedicalPredictions(extractedText, patientInfo);
 
     // Step 4: Synthesize professional diagnosis
     const diagnosis = await synthesizeDiagnosis({
@@ -127,104 +127,324 @@ async function performOCR(base64File, mimeType) {
   }
 }
 
-// AI Analysis using your LangGraph system
+// AI Analysis using Gemini API directly
 async function performAIAnalysis(extractedText, patientInfo) {
   try {
-    const response = await fetch(`${AI_SYSTEM_URL}/chat`, {
+    if (!GEMINI_API_KEY) {
+      throw new Error('Gemini API key not configured');
+    }
+
+    const prompt = `As a medical AI assistant, analyze this medical report and provide professional medical insights:
+
+Patient Information: ${JSON.stringify(patientInfo)}
+
+Medical Report Text:
+${extractedText}
+
+Please provide a comprehensive medical analysis including:
+1. Key medical findings from the report
+2. Identification of any abnormal values and their clinical significance
+3. Assessment of potential health risks based on the findings
+4. Recommended follow-up actions and lifestyle modifications
+5. Suggested specialist referrals if needed
+6. Overall health assessment
+
+Format your response as a structured, professional medical analysis suitable for both healthcare providers and patients.`;
+
+    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        message: `Analyze this medical report and provide professional medical insights:
-        
-        Patient Information: ${JSON.stringify(patientInfo)}
-        
-        Medical Report Text:
-        ${extractedText}
-        
-        Please provide:
-        1. Key medical findings
-        2. Abnormal values and their significance
-        3. Potential health risks
-        4. Recommended follow-up actions
-        5. Specialist referrals if needed
-        
-        Format the response as a structured medical analysis.`,
-        conversation_id: `medical_analysis_${Date.now()}`
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.1,
+          topK: 32,
+          topP: 1,
+          maxOutputTokens: 4096,
+        }
       })
     });
 
     if (response.ok) {
       const data = await response.json();
+      const analysis = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Analysis could not be generated';
+      
       return {
-        analysis: data.response,
-        toolsUsed: data.tools_used || [],
-        timestamp: data.timestamp
+        analysis,
+        toolsUsed: ['Gemini Pro AI'],
+        timestamp: new Date().toISOString(),
+        source: 'gemini-pro'
       };
     }
     
-    throw new Error('AI analysis failed');
+    throw new Error(`Gemini API error: ${response.status}`);
   } catch (error) {
     console.error('AI Analysis Error:', error);
+    
+    // Fallback analysis based on extracted text
+    const fallbackAnalysis = generateFallbackAnalysis(extractedText, patientInfo);
+    
     return {
-      analysis: 'AI analysis temporarily unavailable. Please consult with a healthcare professional for detailed interpretation.',
-      toolsUsed: [],
-      timestamp: new Date().toISOString()
+      analysis: fallbackAnalysis,
+      toolsUsed: ['Fallback Analysis Engine'],
+      timestamp: new Date().toISOString(),
+      source: 'fallback',
+      note: 'AI analysis temporarily using local processing. For detailed interpretation, please consult with a healthcare professional.'
     };
   }
 }
 
-// Medical Predictions using MCP server
-async function getMedicalPredictions(extractedText, patientInfo) {
+// Medical Predictions using built-in analysis (no external server required)
+function getMedicalPredictions(extractedText, patientInfo) {
   const predictions = {};
   
   try {
     // Extract values from text for diabetes prediction
     const diabetesData = extractDiabetesData(extractedText, patientInfo);
     if (diabetesData) {
-      const diabetesResponse = await fetch(`${MCP_SERVER_URL}/call_tool`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: 'Get_Diabetes_Score',
-          arguments: diabetesData
-        })
-      });
-      
-      if (diabetesResponse.ok) {
-        const diabetesResult = await diabetesResponse.json();
-        predictions.diabetes = diabetesResult.result;
-      }
+      predictions.diabetes = calculateDiabetesRisk(diabetesData);
     }
 
     // Extract values for cardiovascular prediction
     const cardioData = extractCardiovascularData(extractedText, patientInfo);
     if (cardioData) {
-      const cardioResponse = await fetch(`${MCP_SERVER_URL}/call_tool`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: 'Get_Cardiovascular_Score',
-          arguments: cardioData
-        })
-      });
-      
-      if (cardioResponse.ok) {
-        const cardioResult = await cardioResponse.json();
-        predictions.cardiovascular = cardioResult.result;
-      }
+      predictions.cardiovascular = calculateCardiovascularRisk(cardioData);
     }
 
+    // Additional health risk assessments
+    predictions.general = analyzeGeneralHealth(extractedText, patientInfo);
+
   } catch (error) {
-    console.error('MCP Predictions Error:', error);
+    console.error('Medical Predictions Error:', error);
+    predictions.error = 'Risk assessment temporarily unavailable';
   }
   
   return predictions;
+}
+
+// Calculate diabetes risk based on extracted data
+function calculateDiabetesRisk(data) {
+  let riskScore = 0;
+  let riskFactors = [];
+
+  // Age factor
+  if (data.age > 45) {
+    riskScore += 1;
+    riskFactors.push('Age over 45');
+  }
+
+  // BMI factor
+  if (data.bmi > 25) {
+    riskScore += 1;
+    riskFactors.push('BMI above normal range');
+  }
+
+  // HbA1c level
+  if (data.HbA1c_level > 5.7) {
+    riskScore += 2;
+    riskFactors.push('Elevated HbA1c level');
+  }
+
+  // Blood glucose level
+  if (data.blood_glucose_level > 100) {
+    riskScore += 2;
+    riskFactors.push('Elevated blood glucose');
+  }
+
+  // Hypertension
+  if (data.hypertension) {
+    riskScore += 1;
+    riskFactors.push('Hypertension present');
+  }
+
+  // Heart disease
+  if (data.heart_disease) {
+    riskScore += 1;
+    riskFactors.push('Heart disease history');
+  }
+
+  // Smoking
+  if (data.smoking_history === 'current') {
+    riskScore += 1;
+    riskFactors.push('Current smoker');
+  }
+
+  // Calculate risk level
+  let riskLevel = 'LOW';
+  let probability = 0.1;
+
+  if (riskScore >= 6) {
+    riskLevel = 'HIGH';
+    probability = 0.8;
+  } else if (riskScore >= 3) {
+    riskLevel = 'MODERATE';
+    probability = 0.4;
+  }
+
+  return {
+    risk_level: riskLevel,
+    probability: probability,
+    risk_score: riskScore,
+    risk_factors: riskFactors,
+    recommendation: riskLevel === 'HIGH' ? 'Immediate consultation with endocrinologist recommended' :
+                   riskLevel === 'MODERATE' ? 'Regular monitoring and lifestyle modifications advised' :
+                   'Continue healthy lifestyle and regular check-ups'
+  };
+}
+
+// Calculate cardiovascular risk
+function calculateCardiovascularRisk(data) {
+  let riskScore = 0;
+  let riskFactors = [];
+
+  // Age and gender factors
+  if ((data.gender === 1 && data.age > 55) || (data.gender === 2 && data.age > 45)) {
+    riskScore += 2;
+    riskFactors.push('Age-related cardiovascular risk');
+  }
+
+  // Blood pressure
+  if (data.ap_hi > 140 || data.ap_lo > 90) {
+    riskScore += 2;
+    riskFactors.push('Hypertension');
+  }
+
+  // Cholesterol
+  if (data.cholesterol === 2) {
+    riskScore += 2;
+    riskFactors.push('High cholesterol');
+  }
+
+  // Smoking
+  if (data.smoke) {
+    riskScore += 2;
+    riskFactors.push('Smoking');
+  }
+
+  // BMI calculation
+  const bmi = data.weight / ((data.height / 100) ** 2);
+  if (bmi > 30) {
+    riskScore += 1;
+    riskFactors.push('Obesity');
+  }
+
+  // Calculate risk level
+  let riskLevel = 'LOW';
+  let probability = 0.1;
+
+  if (riskScore >= 6) {
+    riskLevel = 'HIGH';
+    probability = 0.7;
+  } else if (riskScore >= 3) {
+    riskLevel = 'MODERATE';
+    probability = 0.35;
+  }
+
+  return {
+    risk_level: riskLevel,
+    probability: probability,
+    risk_score: riskScore,
+    risk_factors: riskFactors,
+    bmi: Math.round(bmi * 10) / 10,
+    recommendation: riskLevel === 'HIGH' ? 'Urgent cardiology consultation recommended' :
+                   riskLevel === 'MODERATE' ? 'Lifestyle modifications and regular monitoring advised' :
+                   'Continue healthy lifestyle habits'
+  };
+}
+
+// Analyze general health indicators
+function analyzeGeneralHealth(extractedText, patientInfo) {
+  const text = extractedText.toLowerCase();
+  const healthIndicators = {
+    positive: [],
+    concerns: [],
+    overall_score: 7 // Default good health score
+  };
+
+  // Check for positive indicators
+  if (text.includes('normal') || text.includes('within range')) {
+    healthIndicators.positive.push('Normal values detected');
+  }
+
+  if (text.includes('good') || text.includes('excellent')) {
+    healthIndicators.positive.push('Positive health indicators');
+  }
+
+  // Check for concerns
+  const concernPatterns = [
+    { pattern: /elevated|high(?!.*density)/i, concern: 'Elevated values detected' },
+    { pattern: /low(?!.*density)|decreased/i, concern: 'Low values identified' },
+    { pattern: /abnormal|irregular/i, concern: 'Abnormal findings' },
+    { pattern: /deficiency/i, concern: 'Nutritional deficiency indicated' }
+  ];
+
+  concernPatterns.forEach(({ pattern, concern }) => {
+    if (pattern.test(extractedText)) {
+      healthIndicators.concerns.push(concern);
+      healthIndicators.overall_score -= 1;
+    }
+  });
+
+  // Adjust score based on findings
+  healthIndicators.overall_score = Math.max(1, Math.min(10, healthIndicators.overall_score));
+
+  return healthIndicators;
+}
+
+// Generate fallback analysis when AI is unavailable
+function generateFallbackAnalysis(extractedText, patientInfo) {
+  const analysis = [];
+  const text = extractedText.toLowerCase();
+
+  analysis.push("## Medical Report Analysis\n");
+  
+  // Basic demographic info
+  if (patientInfo.age || patientInfo.gender) {
+    analysis.push(`**Patient Profile**: ${patientInfo.age ? `Age ${patientInfo.age}` : 'Age not specified'}, ${patientInfo.gender || 'Gender not specified'}\n`);
+  }
+
+  // Look for specific values and patterns
+  const patterns = [
+    { regex: /cholesterol.*?(\d+)/i, label: 'Cholesterol Level', unit: 'mg/dL', normal: '< 200' },
+    { regex: /glucose.*?(\d+)/i, label: 'Blood Glucose', unit: 'mg/dL', normal: '70-100' },
+    { regex: /hemoglobin.*?(\d+\.?\d*)/i, label: 'Hemoglobin', unit: 'g/dL', normal: '12-16' },
+    { regex: /(\d+)\/(\d+).*mmhg/i, label: 'Blood Pressure', unit: 'mmHg', normal: '< 120/80' }
+  ];
+
+  analysis.push("### Key Findings:\n");
+  let findingsFound = false;
+
+  patterns.forEach(pattern => {
+    const match = extractedText.match(pattern.regex);
+    if (match) {
+      findingsFound = true;
+      analysis.push(`- **${pattern.label}**: ${match[1]}${match[2] ? `/${match[2]}` : ''} ${pattern.unit} (Normal: ${pattern.normal})`);
+    }
+  });
+
+  if (!findingsFound) {
+    analysis.push("- Medical values detected in report - detailed analysis requires professional interpretation");
+  }
+
+  // General recommendations
+  analysis.push("\n### Recommendations:\n");
+  analysis.push("- Consult with your healthcare provider to discuss these results");
+  analysis.push("- Follow up as recommended by your physician");
+  analysis.push("- Maintain healthy lifestyle habits");
+
+  if (text.includes('high') || text.includes('elevated')) {
+    analysis.push("- Monitor elevated values as advised by your doctor");
+  }
+
+  analysis.push("\n*This is an automated analysis. Please consult with a qualified healthcare professional for proper medical interpretation and advice.*");
+
+  return analysis.join('\n');
 }
 
 // Extract diabetes-relevant data from medical report

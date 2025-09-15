@@ -2,6 +2,8 @@
 "use client";
 
 import { useState } from "react";
+import { setupDemoAvailability } from "@/actions/demo-availability";
+import { toast } from "sonner";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
@@ -24,20 +26,46 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { EnhancedSlotPicker } from "@/components/enhanced-slot-picker";
+import { SlotPicker } from "./slot-picker";
 import { AppointmentForm } from "./appointment-form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import ARVRMedicalViewer from "@/components/arvr-medical-viewer";
 
-export function DoctorProfile({ doctor, availableDays }) {
+export function DoctorProfile({ doctor, availableDays, availabilityMessage }) {
   const [showBooking, setShowBooking] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
+  const [isSetupingDemo, setIsSetupingDemo] = useState(false);
+  const [showARVR, setShowARVR] = useState(false);
   const router = useRouter();
 
   // Calculate total available slots
   const totalSlots = availableDays?.reduce(
     (total, day) => total + day.slots.length,
     0
-  );
+  ) || 0;
+
+  const handleSetupDemoAvailability = async () => {
+    if (isSetupingDemo) return;
+    
+    setIsSetupingDemo(true);
+    try {
+      const result = await setupDemoAvailability(doctor.id);
+      
+      if (result.success) {
+        toast.success(result.message);
+        // Refresh the page to show new availability
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } else {
+        toast.error(result.error);
+      }
+    } catch (error) {
+      toast.error("Failed to setup demo availability");
+    } finally {
+      setIsSetupingDemo(false);
+    }
+  };
 
   const toggleBooking = () => {
     setShowBooking(!showBooking);
@@ -116,6 +144,24 @@ export function DoctorProfile({ doctor, availableDays }) {
                     </>
                   )}
                 </Button>
+
+                <Button
+                  onClick={() => setShowARVR(!showARVR)}
+                  variant="outline"
+                  className="w-full mt-2 border-purple-300 text-purple-700 hover:bg-purple-50"
+                >
+                  {showARVR ? (
+                    <>
+                      Hide AR/VR Viewer
+                      <ChevronUp className="ml-2 h-4 w-4" />
+                    </>
+                  ) : (
+                    <>
+                      🥽 Explore in 3D/AR/VR
+                      <ChevronDown className="ml-2 h-4 w-4" />
+                    </>
+                  )}
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -160,17 +206,39 @@ export function DoctorProfile({ doctor, availableDays }) {
                   </p>
                 </div>
               ) : (
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    No available slots for the next 4 days. Please check back
-                    later.
-                  </AlertDescription>
-                </Alert>
+                <div className="space-y-3">
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      {availabilityMessage || "No available slots for the next 4 days. Please check back later."}
+                    </AlertDescription>
+                  </Alert>
+                  {availabilityMessage && availabilityMessage.includes("no availability") && (
+                    <Button
+                      onClick={handleSetupDemoAvailability}
+                      disabled={isSetupingDemo}
+                      className="mt-2 bg-blue-600 hover:bg-blue-700"
+                      size="sm"
+                    >
+                      {isSetupingDemo ? "Setting up..." : "Setup Demo Availability"}
+                    </Button>
+                  )}
+                </div>
               )}
             </div>
           </CardContent>
         </Card>
+
+        {/* AR/VR Medical Viewer Section */}
+        {showARVR && (
+          <div id="arvr-section">
+            <ARVRMedicalViewer
+              isVisible={true}
+              specialty={doctor.specialty}
+              patientCondition="Consultation Preview"
+            />
+          </div>
+        )}
 
         {/* Booking Section - Conditionally rendered */}
         {showBooking && (
@@ -187,10 +255,10 @@ export function DoctorProfile({ doctor, availableDays }) {
               <CardContent className="space-y-6">
                 {totalSlots > 0 ? (
                   <>
-                    {/* Enhanced Slot selection with calendar */}
+                    {/* Slot selection with calendar */}
                     {!selectedSlot && (
-                      <EnhancedSlotPicker
-                        doctorId={doctor.id}
+                      <SlotPicker
+                        days={availableDays}
                         onSelectSlot={handleSlotSelect}
                       />
                     )}
